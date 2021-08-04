@@ -170,22 +170,31 @@ class restrict(commands.Cog):
     
     @git.command(name='pull')
     async def pull(self, ctx):
-        await asyncio.create_subprocess_shell(f'git pull {General.GIT_REPO_LINK()}')
+        embed = discord.Embed(title='Git pull.', description='')
+        process = await asyncio.create_subprocess_shell(f'git pull {General.GIT_REPO_LINK()}')
+        output, error = await process.communicate()
+        if output:
+            embed.description += f'[stdout]\n{output.decode()}\n\n'
+        if error:
+            embed.description += f'[stderr]\n{error.decode()}\n\n'
+        await ctx.send(embed=embed)
         await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
     @git.command()
     async def push(self, ctx, *, reason='Code update.'):
-        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push --force origin master']
+        embed = discord.Embed(title='Git push.', description='Details')
+        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push origin master']
         for git_command in git_commands:
             process = await asyncio.create_subprocess_shell(git_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             output, error = await process.communicate()
-            print(f'[{git_command!r} exited with return code {process.returncode}')
+            embed.description += f'[{git_command!r} exited with return code {process.returncode}\n'
             if output:
-                print(f'[stdout]\n{output.decode()}')
+                embed.description += f'[stdout]\n{output.decode()}\n\n'
             if error:
-                print(f'[stderr]\n{error.decode()}')
-        await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
-        await ctx.invoke(self.bot.get_command('reload'), extension='~')
+                embed.description += f'[stderr]\n{error.decode()}\n\n'
+        await ctx.send(embed=embed)
+        #await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
+        #await ctx.invoke(self.bot.get_command('reload'), extension='~')
 if 1 <= 5 < 10:
     print('a')
 
