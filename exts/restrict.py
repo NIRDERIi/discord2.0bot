@@ -188,7 +188,7 @@ class restrict(commands.Cog):
             if output:
                 embed.description += f'[stdout]\n{output.decode()}\n'
                 await ctx.send(output.decode().lower().lstrip())
-                await ctx.send(repr(output.decode().lower().lstrip()))
+                await ctx.send(repr(output.decode().lower().lstrip().replace('\n', '')))
 
                 if output.decode().lower().lstrip().replace('\n', '') == 'already up to date.':
                     is_up_to_date = True
@@ -196,6 +196,7 @@ class restrict(commands.Cog):
                 embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
         if is_up_to_date:
+            print('Is up to date.')
             return
         await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
