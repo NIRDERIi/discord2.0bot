@@ -201,15 +201,13 @@ class restrict(commands.Cog):
             embed.description += f'[{" ".join(git_command)!r} exited with return code {process.returncode}\n'
 
             if output:
-                embed.description += f'[stdout]\n{output}\n'
+                embed.description += f'[stdout]\n{output.decode()}\n'
             if error:
-                embed.description += f'[stderr]\n{error}\n'
+                embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
 
         await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
-        #await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
-        #await ctx.invoke(self.bot.get_command('reload'), extension='~')
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
