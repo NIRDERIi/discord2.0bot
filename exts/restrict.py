@@ -225,7 +225,7 @@ class restrict(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(name='source', aliases=['src'])
+    @commands.command(name='source', aliases=['src', 'sr'])
     async def source(self, ctx, *, source_item: SourceConvert):
         if isinstance(source_item, commands.Command):
             callback = source_item.callback
