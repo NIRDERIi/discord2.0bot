@@ -238,7 +238,7 @@ class restrict(commands.Cog):
                 source_path = '/'.join(file_path_lst[file_path_lst.index('exts'):])
             elif 'utility' in file_path_lst:
                 source_path = '/'.join(file_path_lst[file_path_lst.index('utility'):])
-            full_link = f'{General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-{ending_line}'
+            full_link = f'{General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}'
             await ctx.send(f'<{full_link}>')
 
 
