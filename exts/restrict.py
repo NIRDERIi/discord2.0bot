@@ -175,7 +175,7 @@ class restrict(commands.Cog):
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
     @git.command()
     async def push(self, ctx, *, reason='Code update.'):
-        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push origin main']
+        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push origin master']
         for git_command in git_commands:
             process = await asyncio.create_subprocess_shell(git_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             output, error = await process.communicate()
