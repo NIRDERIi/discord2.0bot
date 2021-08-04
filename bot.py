@@ -58,6 +58,7 @@ class Bot(commands.Bot):
         self.accept_events = True
         self.logs_webhooks = {}
         self.invalid_exts = []
+        self.hidden_help_cogs = ['GeneralEvents', 'HelpCommand', 'Logs', 'restrict']
         self.start_logger(name = 'discord', filename ='discord.log', encoding='utf-8', mode='w', format=BASIC_FORMAT)
 
     def start_logger(self, name = 'discord', filename ='discord.log', encoding='utf-8', mode='w', format=BASIC_FORMAT):

@@ -2,15 +2,17 @@ import discord
 from discord.ext import commands
 import typing
 from . import functions
-from bot import CustomContext
+from bot import CustomContext, Bot
 
 class HelpCommandView(discord.ui.View):
     def __init__(self, *, timeout: typing.Optional[float], ctx: CustomContext):
-        self.ctx = ctx
-        self.bot = self.ctx.bot
+        self.ctx: CustomContext = ctx
+        self.bot: Bot = self.ctx.bot
         super().__init__(timeout=timeout)
         item = HelpCommandSelect(ctx=self.ctx, view=self)
         for cog_name, cog_object in self.bot.cogs.items():
+            if cog_name in self.bot.hidden_help_cogs and self.ctx.author.id not in self.bot.allowed_users:
+                continue
             item.add_option(label=cog_name, description=cog_object.__doc__)
         self.add_item(item=item)
 
