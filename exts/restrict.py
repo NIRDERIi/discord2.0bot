@@ -175,7 +175,7 @@ class restrict(commands.Cog):
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
     @git.command()
     async def push(self, ctx, *, reason='Code update.'):
-        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push origin master']
+        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push --force origin master']
         for git_command in git_commands:
             process = await asyncio.create_subprocess_shell(git_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             output, error = await process.communicate()
@@ -186,7 +186,8 @@ class restrict(commands.Cog):
                 print(f'[stderr]\n{error.decode()}')
         await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
-
+if 1 <= 5 < 10:
+    print('a')
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
