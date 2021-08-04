@@ -171,7 +171,7 @@ class restrict(commands.Cog):
     @git.command(name='pull')
     async def pull(self, ctx):
         embed = discord.Embed(title='Git pull.', description='')
-        process = await asyncio.create_subprocess_shell(f'git pull {General.GIT_REPO_LINK()}', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        process = await asyncio.create_subprocess_exec(f'git pull {General.GIT_REPO_LINK()}', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         output, error = await process.communicate()
         if output:
             embed.description += f'[stdout]\n{output.decode()}\n\n'
@@ -182,21 +182,34 @@ class restrict(commands.Cog):
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
     @git.command()
     async def push(self, ctx, *, reason='Code update.'):
-        embed = discord.Embed(title='Git push.', description='Details')
-        git_commands = ['git add .', f'git commit -m "{reason}"', 'git push origin master']
+        embed = discord.Embed(title='Git push.', description='')
+        git_commands = [
+            ['git', 'add', '.'],
+            ['git', 'commit', '-m', reason],
+            ['git', 'push', 'origin', 'master'],
+        ]
+
         for git_command in git_commands:
-            process = await asyncio.create_subprocess_shell(git_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            process = await asyncio.create_subprocess_exec(
+                git_command[0],
+                *git_command[1: ],
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
             output, error = await process.communicate()
-            embed.description += f'[{git_command!r} exited with return code {process.returncode}\n'
+            embed.description += f'[{" ".join(git_command)!r} exited with return code {process.returncode}\n'
+
             if output:
-                embed.description += f'[stdout]\n{output.decode()}\n\n'
+                embed.description += f'[stdout]\n{output}\n'
             if error:
-                embed.description += f'[stderr]\n{error.decode()}\n\n'
+                embed.description += f'[stderr]\n{error}\n'
         await ctx.send(embed=embed)
+
+        await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
+        await ctx.invoke(self.bot.get_command('reload'), extension='~')
         #await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
         #await ctx.invoke(self.bot.get_command('reload'), extension='~')
-if 1 <= 5 < 10:
-    print('a')
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
