@@ -30,6 +30,7 @@ import inspect
 
 
 
+
 class restrict(commands.Cog):
     """Test"""
     
@@ -243,9 +244,14 @@ class restrict(commands.Cog):
                 source_path = '/'.join(file_path_lst[file_path_lst.index('utility'):])
             full_link = f'{General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}'
             await ctx.send(f'<{full_link}>')
+        elif isinstance(source_item, str):
+            lst = source_item.split('.')
+            last_data = '.'.join(lst[-2:])
+            first_data = '/'.join(lst[:-2])
+            source_item = f'{first_data}/{last_data}'
+            await ctx.send(f'<{General.REPO_LINK()}/blob/master/{source_item}>')
 
-
-        pass
+            pass
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))

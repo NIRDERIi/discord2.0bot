@@ -5,6 +5,7 @@ from discord.ext import commands
 import more_itertools
 from . import buttons
 import datetime
+import os
 #from bot import CustomContext
 
 class ProcessError(commands.CommandInvokeError):
@@ -37,3 +38,22 @@ async def basic_check(ctx: CustomContext, interaction: discord.Interaction):
 
 async def basic_guild_check(ctx: CustomContext, interaction: discord.Interaction):
     return ctx.author.guild_permissions.administrator
+
+
+def find_path(file: str):
+    if os.path.isdir(file):
+        return None
+    invalid = ['discord.log', '__init__.py', '.env', ]
+    invalid2 = ['discord', '__init__', '.env']
+    if file in invalid or file[:-3] in invalid or file in invalid2 or file[:-3] in invalid2:
+        raise ProcessError('These files are restricted.')
+    final_path = None
+    if file in [i[:-3] for i in os.listdir()] or file in os.listdir():
+        final_path = file is file.endswith('.py') or f'{file}.py'
+
+    if file in [i[:-3] for i in os.listdir('utility')]:
+        final_path = file if file.endswith('.py') else f'utility/{file}.py'
+
+    if file in [i[:-3] for i in os.listdir('exts')]:
+        final_path = file if file.endswith('.py') else f'exts/{file}.py'
+    return final_path

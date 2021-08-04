@@ -1,4 +1,4 @@
-from utility.functions import ProcessError
+from utility.functions import ProcessError, find_path
 import discord
 from discord.ext import commands
 from . import constants
@@ -83,7 +83,6 @@ class SourceConvert(commands.Converter):
         command = ctx.bot.get_command(argument)
         if command:
             return command
-        cog = ctx.bot.get_cog(argument)
-        if cog:
-            return cog
+        if find_path(argument.lower()):
+            return find_path(argument.lower())
         raise ProcessError(f'Could not convert {argument} to a valid cog or command.')
