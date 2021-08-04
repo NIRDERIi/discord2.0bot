@@ -5,7 +5,7 @@ from discord import embeds
 from discord.ext import commands
 from discord.utils import PY_310
 from bot import Bot
-from utility.converters import CodeCleanUp, ExtensionPath
+from utility.converters import CodeCleanUp, ExtensionPath, SourceConvert
 import asyncio
 import aiohttp
 import os
@@ -24,6 +24,7 @@ import utility
 from bot import CustomContext
 import git
 from utility.constants import General
+import inspect
 
 
 
@@ -222,6 +223,20 @@ class restrict(commands.Cog):
             if error:
                 embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
+
+
+    @commands.command(name='source', aliases=['src'])
+    async def source(self, ctx, *, source_item: SourceConvert):
+        if isinstance(source_item, commands.Command):
+            callback = source_item.callback
+            lines = inspect.getsourcelines(callback)
+            starting_line = lines[0]
+            ending_line = len(lines) - 1
+            file = inspect.getsourcefile(callback)
+            await ctx.send(file)
+            await ctx.send(starting_line)
+            await ctx.send(ending_line)
+        pass
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))

@@ -75,3 +75,15 @@ class CharLimit(commands.Converter):
         if len(argument) > self.char_limit:
 
             raise ProcessError(f'You exceeded the char limit `{self.char_limit}`')
+
+
+class SourceConvert(commands.Converter):
+
+    async def convert(self, ctx: CustomContext, argument: str):
+        command = ctx.bot.get_command(argument)
+        if command:
+            return command
+        cog = ctx.bot.get_cog(argument)
+        if cog:
+            return cog
+        raise ProcessError(f'Could not convert {argument} to a valid cog or command.')
