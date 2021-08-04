@@ -230,7 +230,7 @@ class restrict(commands.Cog):
         if isinstance(source_item, commands.Command):
             callback = source_item.callback
             lines = inspect.getsourcelines(callback)
-            starting_line = lines[0]
+            starting_line = lines[1]
             ending_line = len(lines) - 1
             file = inspect.getsourcefile(callback)
             await ctx.send(file)
