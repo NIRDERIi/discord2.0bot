@@ -187,7 +187,10 @@ class restrict(commands.Cog):
 
             if output:
                 embed.description += f'[stdout]\n{output.decode()}\n'
-                if output.decode().lower() == 'already up to date.':
+                await ctx.send(output.decode().lower().lstrip())
+                await ctx.send(repr(output.decode().lower().lstrip()))
+
+                if output.decode().lower().lstrip().replace('\n', '') == 'already up to date.':
                     is_up_to_date = True
             if error:
                 embed.description += f'[stderr]\n{error.decode()}\n'
@@ -221,7 +224,6 @@ class restrict(commands.Cog):
             if error:
                 embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
-        #test
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
