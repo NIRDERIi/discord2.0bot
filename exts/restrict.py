@@ -233,9 +233,15 @@ class restrict(commands.Cog):
             starting_line = lines[1]
             ending_line = len(lines[0]) + starting_line - 1
             file = inspect.getsourcefile(callback)
-            await ctx.send(file)
-            await ctx.send(starting_line)
-            await ctx.send(ending_line)
+            file_path_lst = file.split("\\")
+            if 'exts' in file_path_lst:
+                source_path = '/'.join(file_path_lst[file_path_lst.index('exts'):])
+            elif 'utility' in file_path_lst:
+                source_path = '/'.join(file_path_lst[file_path_lst.index('utility'):])
+            full_link = f'{General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-{ending_line}'
+            await ctx.send(f'<{full_link}>')
+
+
         pass
 
 def setup(bot: Bot):
