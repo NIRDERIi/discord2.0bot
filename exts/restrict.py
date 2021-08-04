@@ -221,6 +221,7 @@ class restrict(commands.Cog):
             if error:
                 embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
+        #test
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
