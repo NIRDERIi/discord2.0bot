@@ -171,7 +171,7 @@ class restrict(commands.Cog):
     @git.command(name='pull')
     async def pull(self, ctx):
         embed = discord.Embed(title='Git pull.', description='')
-        process = await asyncio.create_subprocess_shell(f'git pull {General.GIT_REPO_LINK()}')
+        process = await asyncio.create_subprocess_shell(f'git pull {General.GIT_REPO_LINK()}', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         output, error = await process.communicate()
         if output:
             embed.description += f'[stdout]\n{output.decode()}\n\n'
