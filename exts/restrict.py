@@ -170,14 +170,30 @@ class restrict(commands.Cog):
     
     @git.command(name='pull')
     async def pull(self, ctx):
+        is_up_to_date = False
         embed = discord.Embed(title='Git pull.', description='')
-        process = await asyncio.create_subprocess_exec(f'git pull {General.GIT_REPO_LINK()}', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        output, error = await process.communicate()
-        if output:
-            embed.description += f'[stdout]\n{output.decode()}\n\n'
-        if error:
-            embed.description += f'[stderr]\n{error.decode()}\n\n'
+        git_commands = [['git', 'pull', General.GIT_REPO_LINK()]]
+            
+        for git_command in git_commands:
+            process = await asyncio.create_subprocess_exec(
+                git_command[0],
+                *git_command[1: ],
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            output, error = await process.communicate()
+            embed.description += f'[{" ".join(git_command)!r} exited with return code {process.returncode}\n'
+
+            if output:
+                embed.description += f'[stdout]\n{output.decode()}\n'
+                if output.decode().lower() == 'already up to date.':
+                    is_up_to_date = True
+            if error:
+                embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
+        if is_up_to_date:
+            return
         await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
         await ctx.invoke(self.bot.get_command('reload'), extension='~')
     @git.command()
@@ -205,9 +221,6 @@ class restrict(commands.Cog):
             if error:
                 embed.description += f'[stderr]\n{error.decode()}\n'
         await ctx.send(embed=embed)
-
-        await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
-        await ctx.invoke(self.bot.get_command('reload'), extension='~')
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
