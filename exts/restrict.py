@@ -251,7 +251,5 @@ class restrict(commands.Cog):
             source_item = f'{first_data}/{last_data}'
             await ctx.send(f'<{General.REPO_LINK()}/blob/master/{source_item}>')
 
-            pass
-
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
