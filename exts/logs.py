@@ -314,9 +314,11 @@ class Logs(commands.Cog):
             channel = guild.get_channel(payload.channel_id)
         
             new_content = payload.data.get('content')
+            old_content = payload.cached_message.content if payload.cached_message else 'Couldn\'t fetch.'
+            if new_content == old_content:
+                return
             author_name = payload.data.get('author').get('username')
             author_discriminator = payload.data.get('author').get('discriminator')
-            old_content = payload.cached_message.content if payload.cached_message else 'Couldn\'t fetch.'
             old_content = old_content or '`No string content.`'
             old_content = old_content if len(old_content) < 350 else await self.get_hastebin(old_content)
             new_content = new_content if len(new_content) < 350 else await self.get_hastebin(new_content)
@@ -326,7 +328,9 @@ class Logs(commands.Cog):
             author_name = payload.data.get('author').get('username')
             author_discriminator = payload.data.get('author').get('discriminator')
             guild, channel, author, message_content, attachment = message_db
-
+            if new_content == message_content:
+                return
+        await self.update_db_message(payload.message_id, payload.data.get('content'))
         description = f'**Channel:** {channel.mention}\n\n**Author:** {author_name}#{author_discriminator}\n\n**Old content:** {old_content}\n\n**New content:** {new_content}'
         await webhook.send(embed=build_embed(title='Message edit.', description=description, timestamp=datetime.datetime.utcnow()))
 
@@ -371,6 +375,47 @@ class Logs(commands.Cog):
             return
         await self.dispatch_channel_update_event(before, after, webhook)
 
+    @commands.Cog.listener(name='on_message')
+    async def pinned_message(self, message: discord.Message):
+        webhook = await self.get_webhook(message.guild)
+        if not webhook:
+            return
+        if not message.type is discord.MessageType.pins_add:
+            return
+        if not message.reference:
+            return
+        message_ref: discord.Message = message.reference.cached_message or message.reference.resolved or await message.channel.fetch_message(message.reference.message_id)
+        if not message_ref:
+            return
+        if not message_ref.pinned:
+            return
+        executer = 'Not found.'
+        
+        embed = build_embed(title='Message pinned.', description='')
+        async for entry in message.guild.audit_logs(limit=2, action=discord.AuditLogAction.message_pin):
+            if entry.target.id == message_ref.author.id:
+                executer = entry.user
+                break
+        content = message_ref.content or 'No content.'
+        content = content if len(content) < 2000 else await self.get_hastebin(content)
+        kwargs = {}
+        embed.description = f'**Channel:** {message_ref.channel.mention}\n\n**Author:** {message_ref.author}\n\n**Content:** {content}\n\n**Executer:** {executer}'
+        if message_ref.attachments:
+            files = []
+            for attachment in message_ref.attachments:
+            
+                files.append(await attachment.to_file())
+            kwargs['files'] = files
+        embeds = [embed]
+        if message_ref.embeds:
+            for sent_embed in message_ref.embeds:
+                embeds.append(sent_embed.copy())
+            
+        if len(embeds) > 10:
+            embeds.pop(11)
+        kwargs['embeds'] = embeds
+        await webhook.send(**kwargs)
+        
 
         
 def setup(bot: Bot):
