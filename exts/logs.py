@@ -416,7 +416,6 @@ class Logs(commands.Cog):
         kwargs['embeds'] = embeds
         await webhook.send(**kwargs)
         
-
         
 def setup(bot: Bot):
     bot.add_cog(Logs(bot))
