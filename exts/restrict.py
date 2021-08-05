@@ -27,13 +27,9 @@ from utility.constants import General
 import inspect
 
 
-
-
-
-
 class restrict(commands.Cog):
     """Test"""
-    
+
     def __init__(self, bot: Bot) -> None:
 
         self.bot: Bot = bot
@@ -42,23 +38,20 @@ class restrict(commands.Cog):
     async def cog_check(self, ctx: CustomContext):
         return ctx.author.id in self.bot.allowed_users
 
-    @commands.command(name='libs-reload')
+    @commands.command(name="libs-reload")
     async def libs_reload(self, ctx: CustomContext, *, lib_path: SelfLib()):
-        embed = discord.Embed(description='', color=discord.Colour.blurple())
-        if lib_path == '~':
-            for file in os.listdir('utility'):
-                if '__init__' in file or not file.endswith('.py'):
+        embed = discord.Embed(description="", color=discord.Colour.blurple())
+        if lib_path == "~":
+            for file in os.listdir("utility"):
+                if "__init__" in file or not file.endswith(".py"):
                     continue
-                full_path_valid = f'utility.{file[:-3]}'
-                embed.description += f'`{full_path_valid}` {Emojis.recycle()}\n'
+                full_path_valid = f"utility.{file[:-3]}"
+                embed.description += f"`{full_path_valid}` {Emojis.recycle()}\n"
                 importlib.reload(eval(full_path_valid))
         else:
             importlib.reload(eval(lib_path))
-            embed.description = f'{lib_path} {Emojis.recycle()}'
+            embed.description = f"{lib_path} {Emojis.recycle()}"
         await ctx.send(embed=embed)
-                
-        
-
 
     @commands.command(
         name="eval", description="Evaluates a python code.", usage="eval <code>"
@@ -76,7 +69,8 @@ class restrict(commands.Cog):
             "__name__": __name__,
             "os": os,
             "datetime": datetime,
-            'importlib': importlib
+            "importlib": importlib,
+            "__file__": __file__,
         }
         stdout = io.StringIO()
         to_process = f"async def func():\n{textwrap.indent(code, '    ')}"
@@ -114,72 +108,79 @@ class restrict(commands.Cog):
             self.eval_outputs[ctx.message.id] = message_eval
         pass
 
-    
     @commands.command()
     async def test(self, ctx: CustomContext):
         async def check(interaction: discord.Interaction):
             return interaction.user.id == ctx.author.id
 
-        embeds = [discord.Embed(title='a'), discord.Embed(title='b'), discord.Embed(title='c')]
+        embeds = [
+            discord.Embed(title="a"),
+            discord.Embed(title="b"),
+            discord.Embed(title="c"),
+        ]
         paginator = Paginator(ctx=ctx, embeds=embeds, timeout=20.0, check=check)
         await paginator.run()
 
     @commands.command()
     async def reload(self, ctx: CustomContext, *, extension: ExtensionPath):
-        embed = discord.Embed(description='', color=discord.Colour.blurple())
-        if extension == '~':
+        embed = discord.Embed(description="", color=discord.Colour.blurple())
+        if extension == "~":
             to_reload = [key[0] for key in self.bot.extensions.items()]
             for path in to_reload:
-                embed.description += f'`{path}` {Emojis.recycle()}\n'
+                embed.description += f"`{path}` {Emojis.recycle()}\n"
                 self.bot.reload_extension(path)
         else:
-            embed.description = f'`{extension}` {Emojis.recycle()}'
+            embed.description = f"`{extension}` {Emojis.recycle()}"
             self.bot.reload_extension(extension)
         await ctx.send(embed=embed)
 
     @commands.command()
     async def unload(self, ctx: CustomContext, *, extension: ExtensionPath):
-        embed = discord.Embed(description='', color=discord.Colour.blurple())
-        if extension == '~':
+        embed = discord.Embed(description="", color=discord.Colour.blurple())
+        if extension == "~":
             to_unload = [key[0] for key in self.bot.extensions.items()]
             for path in to_unload:
-                embed.description += f'`{path}` {Emojis.lock()}'
+                embed.description += f"`{path}` {Emojis.lock()}"
                 self.bot.unload_extension(path)
         else:
-            embed.description = f'`{extension}` {Emojis.lock()}'
+            embed.description = f"`{extension}` {Emojis.lock()}"
             self.bot.unload_extension(extension)
         await ctx.send(embed=embed)
 
     @commands.command()
     async def paste(self, ctx: CustomContext, *, text):
-        data = bytes(text, 'utf-8')
-        async with self.bot._session.post('https://hastebin.com/documents', data=data) as r:
+        data = bytes(text, "utf-8")
+        async with self.bot._session.post(
+            "https://hastebin.com/documents", data=data
+        ) as r:
             res = await r.json()
-            key = res['key']
-            await ctx.send(f'https://hastebin.com/{key}')
+            key = res["key"]
+            await ctx.send(f"https://hastebin.com/{key}")
 
-    @commands.Cog.listener('on_message_edit')
+    @commands.Cog.listener("on_message_edit")
     async def re_eval(self, before, after):
-        if after.content.startswith('m!eval') and before.author.id in self.bot.allowed_users:
+        if (
+            after.content.startswith("m!eval")
+            and before.author.id in self.bot.allowed_users
+        ):
             with contextlib.suppress(KeyError, discord.HTTPException):
                 await self.eval_outputs[after.id].delete()
             await self.bot.process_commands(after)
 
-    
-    @commands.group(name='git', invoke_without_command=True)
+    @commands.group(name="git", invoke_without_command=True)
     async def git(self, ctx):
-        await ctx.send('Specify correct command.')
-    
-    @git.command(name='pull')
+        await ctx.send("Specify correct command.")
+
+    @git.command(name="pull")
     async def pull(self, ctx):
         is_up_to_date = False
-        embed = discord.Embed(title='Git pull.', description='')
-        git_commands = [['git', 'pull', General.GIT_REPO_LINK()]]
-            
+        embed = discord.Embed(title="Git pull.", description="")
+        git_commands = [["git", "pull", General.GIT_REPO_LINK()]]
+
         for git_command in git_commands:
             process = await asyncio.create_subprocess_exec(
                 git_command[0],
-                *git_command[1: ],
+                *git_command[1:],
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -188,30 +189,34 @@ class restrict(commands.Cog):
             embed.description += f'[{" ".join(git_command)!r} exited with return code {process.returncode}\n'
 
             if output:
-                embed.description += f'[stdout]\n{output.decode()}\n'
+                embed.description += f"[stdout]\n{output.decode()}\n"
 
-                if output.decode().lower().lstrip().replace('\n', '') == 'already up to date.':
+                if (
+                    output.decode().lower().lstrip().replace("\n", "")
+                    == "already up to date."
+                ):
                     is_up_to_date = True
             if error:
-                embed.description += f'[stderr]\n{error.decode()}\n'
+                embed.description += f"[stderr]\n{error.decode()}\n"
         await ctx.send(embed=embed)
         if is_up_to_date:
             return
-        await ctx.invoke(self.bot.get_command('libs-reload'), lib_path='~')
-        await ctx.invoke(self.bot.get_command('reload'), extension='~')
+        await ctx.invoke(self.bot.get_command("libs-reload"), lib_path="~")
+        await ctx.invoke(self.bot.get_command("reload"), extension="~")
+
     @git.command()
-    async def push(self, ctx, *, reason='Code update.'):
-        embed = discord.Embed(title='Git push.', description='')
+    async def push(self, ctx, *, reason="Code update."):
+        embed = discord.Embed(title="Git push.", description="")
         git_commands = [
-            ['git', 'add', '.'],
-            ['git', 'commit', '-m', reason],
-            ['git', 'push', 'origin', 'master'],
+            ["git", "add", "."],
+            ["git", "commit", "-m", reason],
+            ["git", "push", "origin", "master"],
         ]
 
         for git_command in git_commands:
             process = await asyncio.create_subprocess_exec(
                 git_command[0],
-                *git_command[1: ],
+                *git_command[1:],
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -220,16 +225,15 @@ class restrict(commands.Cog):
             embed.description += f'[{" ".join(git_command)!r} exited with return code {process.returncode}\n'
 
             if output:
-                embed.description += f'[stdout]\n{output.decode()}\n'
+                embed.description += f"[stdout]\n{output.decode()}\n"
             if error:
-                embed.description += f'[stderr]\n{error.decode()}\n'
+                embed.description += f"[stderr]\n{error.decode()}\n"
         await ctx.send(embed=embed)
 
-
     @commands.command(
-        name='source', 
-        aliases=['src'],
-        )
+        name="source",
+        aliases=["src"],
+    )
     async def source(self, ctx, *, source_item: SourceConvert):
         if isinstance(source_item, commands.Command):
             callback = source_item.callback
@@ -238,18 +242,19 @@ class restrict(commands.Cog):
             ending_line = len(lines[0]) + starting_line - 1
             file = inspect.getsourcefile(callback)
             file_path_lst = file.split("\\")
-            if 'exts' in file_path_lst:
-                source_path = '/'.join(file_path_lst[file_path_lst.index('exts'):])
-            elif 'utility' in file_path_lst:
-                source_path = '/'.join(file_path_lst[file_path_lst.index('utility'):])
-            full_link = f'{General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}'
-            await ctx.send(f'<{full_link}>')
+            if "exts" in file_path_lst:
+                source_path = "/".join(file_path_lst[file_path_lst.index("exts") :])
+            elif "utility" in file_path_lst:
+                source_path = "/".join(file_path_lst[file_path_lst.index("utility") :])
+            full_link = f"{General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}"
+            await ctx.send(f"<{full_link}>")
         elif isinstance(source_item, str):
-            lst = source_item.split('.')
-            last_data = '.'.join(lst[-2:])
-            first_data = '/'.join(lst[:-2])
-            source_item = f'{first_data}/{last_data}'
-            await ctx.send(f'<{General.REPO_LINK()}/blob/master/{source_item}>')
+            lst = source_item.split(".")
+            last_data = ".".join(lst[-2:])
+            first_data = "/".join(lst[:-2])
+            source_item = f"{first_data}/{last_data}"
+            await ctx.send(f"<{General.REPO_LINK()}/blob/master/{source_item}>")
+
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))

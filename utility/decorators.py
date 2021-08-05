@@ -11,9 +11,13 @@ def restrict():
             self = args[0]
             ctx: CustomContext = args[1]
             if ctx.author.id not in self.bot.allowed_users:
-                raise functions.ProcessError(constants.Messages.BASIC_UNAUTHORIZED_MESSAGE())
+                raise functions.ProcessError(
+                    constants.Messages.BASIC_UNAUTHORIZED_MESSAGE()
+                )
             return await func(*args, **kwargs)
+
         return restricter
+
     return wrapper
 
 
@@ -24,5 +28,7 @@ def events():
             self = args[0]
             if self.bot.accept_events:
                 return await func(*args, **kwargs)
+
         return event_accept_check
+
     return wrapper

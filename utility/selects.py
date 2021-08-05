@@ -4,6 +4,7 @@ import typing
 from . import functions
 from bot import CustomContext, Bot
 
+
 class HelpCommandView(discord.ui.View):
     def __init__(self, *, timeout: typing.Optional[float], ctx: CustomContext):
         self.ctx: CustomContext = ctx
@@ -11,7 +12,10 @@ class HelpCommandView(discord.ui.View):
         super().__init__(timeout=timeout)
         item = HelpCommandSelect(ctx=self.ctx, view=self)
         for cog_name, cog_object in self.bot.cogs.items():
-            if cog_name in self.bot.hidden_help_cogs and self.ctx.author.id not in self.bot.allowed_users:
+            if (
+                cog_name in self.bot.hidden_help_cogs
+                and self.ctx.author.id not in self.bot.allowed_users
+            ):
                 continue
             item.add_option(label=cog_name, description=cog_object.__doc__)
         self.add_item(item=item)
@@ -25,7 +29,9 @@ class HelpCommandView(discord.ui.View):
 
 
 class HelpCommandSelect(discord.ui.Select):
-    def __init__(self, *args, ctx: CustomContext, view: HelpCommandView, **kwargs) -> None:
+    def __init__(
+        self, *args, ctx: CustomContext, view: HelpCommandView, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.ctx = ctx
         self._inner_view = view
@@ -37,5 +43,5 @@ class HelpCommandSelect(discord.ui.Select):
             await interaction.response.defer(ephemeral=False)
         except Exception as e:
             pass
-        await functions.start_cog_help(self.ctx, cog_selected)        
+        await functions.start_cog_help(self.ctx, cog_selected)
         return await super().callback(interaction)
