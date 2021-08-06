@@ -93,7 +93,7 @@ class SourceConvert(commands.Converter):
             lines = inspect.getsourcelines(callback)
             starting_line = lines[1]
             ending_line = len(lines[0]) + starting_line - 1
-            file = inspect.getsourcefile(callback)
+            file = inspect.getsourcefile(inspect.unwrap(callback))
             print(file)
             file_path_lst = file.split("\\")
             if "exts" in file_path_lst:
