@@ -70,3 +70,7 @@ class General:
     @staticmethod
     def GIT_REPO_LINK():
         return "https://github.com/NIRDERIi/discord2.0bot.git"
+
+    @staticmethod
+    def SUPPORT_SERVER():
+        return "https://discord.gg/htTeS6qfNg"

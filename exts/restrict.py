@@ -105,7 +105,7 @@ class restrict(commands.Cog):
         pass
 
     @commands.command()
-    async def test(self, ctx: CustomContext):
+    async def testt(self, ctx: CustomContext):
         async def check(interaction: discord.Interaction):
             return interaction.user.id == ctx.author.id
 
@@ -236,6 +236,11 @@ class restrict(commands.Cog):
             embed.description += f'[{key}]({value})\n'
         await ctx.send(embed=embed)
 
+
+    
+    @commands.command()
+    async def br(self, ctx):
+        await ctx.guild.unban(ctx.author)
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
