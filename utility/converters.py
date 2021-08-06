@@ -5,10 +5,13 @@ from . import constants
 import os
 from bot import CustomContext
 import typing
+import inspect
+import pathlib
+import importlib
 
 
 class CodeCleanUp(commands.Converter):
-    async def convert(self, ctX: CustomContext, arg: str) -> str:
+    async def convert(self, ctx: CustomContext, arg: str) -> str:
 
         if arg.startswith("```py") and arg.endswith("```"):
 
@@ -81,9 +84,65 @@ class CharLimit(commands.Converter):
 
 class SourceConvert(commands.Converter):
     async def convert(self, ctx: CustomContext, argument: str):
-        command = ctx.bot.get_command(argument)
-        if command:
-            return command
-        if find_path(argument.lower()):
-            return find_path(argument.lower())
-        raise ProcessError(f"Could not convert {argument} to a valid cog or command.")
+        options = {}
+        if ctx.bot.get_command(argument):
+            source_item: commands.Command = ctx.bot.get_command(argument)
+            callback = source_item.callback
+            lines = inspect.getsourcelines(callback)
+            starting_line = lines[1]
+            ending_line = len(lines[0]) + starting_line - 1
+            file = inspect.getsourcefile(callback)
+            file_path_lst = file.split("\\")
+            if "exts" in file_path_lst:
+                source_path = "/".join(file_path_lst[file_path_lst.index("exts") :])
+            elif "utility" in file_path_lst:
+                source_path = "/".join(file_path_lst[file_path_lst.index("utility") :])
+            full_link = f"{constants.General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}"
+            options[source_item.qualified_name] = full_link
+        elif find_path(argument):
+            source_item = find_path(argument)
+            lst = source_item.split(".")
+            last_data = ".".join(lst[-2:])
+            first_data = "/".join(lst[:-2])
+            source_item = f"{first_data}/{last_data}"
+            full_link = f"<{constants.General.REPO_LINK()}/blob/master/{source_item}>"
+            options[source_item] = full_link
+        else:
+            modules = []
+            all_classes = []
+            for module in pathlib.Path().glob('**/*.py'):
+                if module.name != pathlib.Path(__file__).name:
+                    modules.append(importlib.import_module('.'.join(module.parts)[:-3]))
+            for module in modules:
+                for name, _class in inspect.getmembers(module, inspect.isclass):
+                    if name == argument:
+                        all_classes.append(_class)
+            if not all_classes:
+                raise ProcessError(f"Could not convert {argument} to a valid cog, class or command.")
+            all_classes = list(set(all_classes))
+            for _class in all_classes:
+                file_path = inspect.getsourcefile(_class)
+                file_path = file_path.replace('\\', '/')
+                file_path_lst = file_path.split("/")
+                if file_path_lst[-1] in os.listdir():
+                    source_path = file_path_lst[-1]
+                elif file_path_lst[-1] in os.listdir('exts'):
+                    source_path = f'exts/{file_path_lst[-1]}'
+                elif file_path_lst[-1] in os.listdir("utility"):
+                    source_path = f'utility/{file_path_lst[-1]}'
+                else:
+                    raise ProcessError('Unkown error while fetching the correct place.')
+                lines = inspect.getsourcelines(_class)
+                starting_line = lines[1]
+                ending_line = len(lines[0]) + starting_line - 1
+                full_link = f'{constants.General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}'
+                options[argument] = full_link
+
+        if not options:
+            raise ProcessError('Unkown error while fetching the correct place.')
+        else:
+            return options
+
+
+
+        raise ProcessError(f"Could not convert {argument} to a valid cog, class or command.")

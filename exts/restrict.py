@@ -230,7 +230,12 @@ class restrict(commands.Cog):
         name="source",
         aliases=["src"],
     )
-    async def source(self, ctx, *, source_item: SourceConvert):
+    async def source(self, ctx: CustomContext, *, source_item: SourceConvert):
+        embed = discord.Embed(title='Source.', description='')
+        for key, value in source_item.items():
+            embed.description += f'[{key}]({value})\n'
+        await ctx.send(embed=embed)
+        '''
         if isinstance(source_item, commands.Command):
             callback = source_item.callback
             lines = inspect.getsourcelines(callback)
@@ -249,7 +254,7 @@ class restrict(commands.Cog):
             last_data = ".".join(lst[-2:])
             first_data = "/".join(lst[:-2])
             source_item = f"{first_data}/{last_data}"
-            await ctx.send(f"<{General.REPO_LINK()}/blob/master/{source_item}>")
+            await ctx.send(f"<{General.REPO_LINK()}/blob/master/{source_item}>")'''
 
 
 def setup(bot: Bot):
