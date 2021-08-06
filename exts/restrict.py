@@ -1,9 +1,5 @@
-from asyncio.tasks import wait
-import subprocess
 import discord
-from discord import embeds
 from discord.ext import commands
-from discord.utils import PY_310
 from bot import Bot
 from utility.converters import CodeCleanUp, ExtensionPath, SourceConvert
 import asyncio
