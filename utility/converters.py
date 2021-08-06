@@ -87,11 +87,14 @@ class SourceConvert(commands.Converter):
         options = {}
         if ctx.bot.get_command(argument):
             source_item: commands.Command = ctx.bot.get_command(argument)
+            print(source_item.name)
+            print(source_item.cog_name)
             callback = source_item.callback
             lines = inspect.getsourcelines(callback)
             starting_line = lines[1]
             ending_line = len(lines[0]) + starting_line - 1
             file = inspect.getsourcefile(callback)
+            print(file)
             file_path_lst = file.split("\\")
             if "exts" in file_path_lst:
                 source_path = "/".join(file_path_lst[file_path_lst.index("exts") :])
