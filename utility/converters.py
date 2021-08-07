@@ -1,13 +1,16 @@
-from utility.functions import ProcessError, find_path
+import datetime
+from discord import guild
+from utility.functions import ProcessError, build_embed, find_path, error_pastebin, get_divmod
 import discord
 from discord.ext import commands
 from . import constants
 import os
-from bot import CustomContext
+from bot import Bot, CustomContext
 import typing
 import inspect
 import pathlib
 import importlib
+from . import constants
 
 
 class CodeCleanUp(commands.Converter):
@@ -148,4 +151,34 @@ class SourceConvert(commands.Converter):
 
 
 
-        raise ProcessError(f"Could not convert {argument} to a valid cog, class or command.")
+class BugInfo(commands.Converter):
+
+    async def convert(self, ctx: CustomContext, argument: str) -> typing.List[str]:
+        bot: Bot = ctx.bot
+        if not argument.isdigit():
+            raise ProcessError('Bug id must be an integer.')
+        argument = int(argument)
+        async with bot.pool.acquire(timeout=constants.Time.BASIC_DBS_TIMEOUT()) as conn:
+            data = await conn.fetch('''SELECT * FROM bugs WHERE bug_id = ($1)''', argument)
+        if not data:
+            raise ProcessError(f'Bug with the id of {argument} was not found.')
+        record = data[0]
+        bug_id = argument
+        guild_name = bot.get_guild(record['guild_id']) or 'Couldn\'t fetch.'
+        user_name = bot.get_user(record['user_id']) or 'Couldn\'t fetch.'
+        short_error = record['short_error'] or 'Couldn\'t fetch.'
+        full_traceback_link = await error_pastebin(bot, record['full_traceback'])
+        days, hours, minutes, seconds = get_divmod((datetime.datetime.utcnow() - record['error_time']).total_seconds())
+        time_string = f'{days}d, {hours}h, {minutes}m, {seconds}s'
+        return bug_id, guild_name, user_name, short_error, full_traceback_link, time_string
+
+
+
+'''
+        formatted_text = '-\n'.join([i for i in [i for i in more_itertools.sliced(text, 158)]])
+        data = bytes(formatted_text, 'utf-8')
+        async with self.bot._session.post(self.bin_link, data=data) as raw_response:
+            response = await raw_response.json()
+            key = response['key']
+            return self.bin_link_format.format(key)
+'''

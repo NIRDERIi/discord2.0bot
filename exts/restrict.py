@@ -1,7 +1,8 @@
+from utility.functions import build_embed
 import discord
 from discord.ext import commands
 from bot import Bot
-from utility.converters import CodeCleanUp, ExtensionPath, SourceConvert
+from utility.converters import CodeCleanUp, ExtensionPath, SourceConvert, BugInfo
 import asyncio
 import aiohttp
 import os
@@ -246,6 +247,8 @@ class restrict(commands.Cog):
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
 
             data = await conn.fetch('''SELECT * FROM bugs''')
+        if not data:
+            return await ctx.send(embed=build_embed(title='No bugs.', description='There are no system bugs.'))
         iterable = more_itertools.sliced(seq=data, n=4)
         lst = [i for i in iterable]
         for outer_lst in lst:
@@ -257,7 +260,17 @@ class restrict(commands.Cog):
             paginator.add_embed(embed=embed)
         await paginator.run()
 
-    
+    @commands.command()
+    async def bug(self, ctx, bug_id: BugInfo):
+        bugid, guild_name, user_name, short_error, full_traceback_link, time_string = bug_id
+        embed = discord.Embed(title=f'Bug info.', color=discord.Colour.blurple())
+        embed.add_field(name='Bug ID', value=f'`{bugid}`', inline=False)
+        embed.add_field(name='Guild name.', value=f'{guild_name}', inline=False)
+        embed.add_field(name='User name.', value=f'{user_name}', inline=False)
+        embed.add_field(name='Short error.', value=short_error, inline=False)
+        embed.add_field(name='Error.', value=f'[FULL TRACEBACK]({full_traceback_link})', inline=False)
+        embed.add_field(name='Errored.', value=f'`{time_string} ago.`')
+        await ctx.send(embed=embed)
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))

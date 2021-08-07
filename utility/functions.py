@@ -7,8 +7,10 @@ from . import buttons
 import datetime
 import os
 import difflib
+from bot import CustomContext, Bot
 
-# from bot import CustomContext
+BIN_LINK = 'https://hastebin.com/documents'
+BIN_LINK_FORMAT = 'https://hastebin.com/{}'
 
 
 class ProcessError(commands.CommandInvokeError):
@@ -88,3 +90,21 @@ def find_path(file: str):
     if file in [i[:-3] for i in os.listdir("exts")]:
         final_path = file if file.endswith(".py") else f"exts/{file}.py"
     return final_path
+
+
+
+def get_divmod(seconds: int):
+    days, hours = divmod(seconds, 86400)
+    hours, minutes = divmod(hours, 3600)
+    minutes, seconds = divmod(minutes, 60)
+    days, hours, minutes, seconds = round(days), round(hours), round(minutes), round(seconds)
+    return days, hours, minutes, seconds
+
+
+async def error_pastebin(bot: Bot, text: str):
+
+    data = bytes(str(text), encoding='utf-8')
+    async with bot._session.post(url=BIN_LINK, data=data) as raw_response:
+        response = await raw_response.json(content_type=None)
+        key = response['key']
+        return BIN_LINK_FORMAT.format(key)
