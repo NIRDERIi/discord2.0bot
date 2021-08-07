@@ -16,8 +16,6 @@ class ErrorHandler(commands.Cog):
 
     @commands.Cog.listener(name='on_command_error')
     async def command_error_handler(self, ctx: CustomContext, error: commands.CommandError):
-        print(type(error) is ProcessError)
-        print(type(error))
         new_error = getattr(error, 'original', error)
         embed = discord.Embed(title=re.sub( '(?<!^)(?=[A-Z])', ' ', str(type(error).__name__)), color=discord.Colour.red())
         if isinstance(error, commands.MissingRequiredArgument):
@@ -55,7 +53,7 @@ class ErrorHandler(commands.Cog):
         elif isinstance(error, commands.DisabledCommand):
             embed.description = f'This command seems to be globally disabled.'
         elif isinstance(error, ProcessError) or isinstance(new_error, ProcessError) or type(error) is ProcessError:
-            embed.description = str(error.original)
+            embed.description = str(error.args[0])
         elif isinstance(new_error, discord.NotFound):
             embed.description = f'{new_error.text}'
         elif isinstance(new_error, discord.Forbidden):

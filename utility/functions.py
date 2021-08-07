@@ -13,7 +13,7 @@ BIN_LINK = 'https://hastebin.com/documents'
 BIN_LINK_FORMAT = 'https://hastebin.com/{}'
 
 
-class ProcessError(commands.CommandInvokeError):
+class ProcessError(commands.CommandError):
     pass
 
 
