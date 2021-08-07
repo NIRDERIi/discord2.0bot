@@ -112,18 +112,6 @@ class restrict(commands.Cog):
             self.eval_outputs[ctx.message.id] = message_eval
         pass
 
-    @commands.command()
-    async def testt(self, ctx: CustomContext):
-        async def check(interaction: discord.Interaction):
-            return interaction.user.id == ctx.author.id
-
-        embeds = [
-            discord.Embed(title="a"),
-            discord.Embed(title="b"),
-            discord.Embed(title="c"),
-        ]
-        paginator = Paginator(ctx=ctx, embeds=embeds, timeout=20.0, check=check)
-        await paginator.run()
 
     @commands.command()
     async def reload(self, ctx: CustomContext, *, extension: ExtensionPath):
