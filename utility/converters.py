@@ -12,7 +12,6 @@ import pathlib
 import importlib
 from . import constants
 
-
 class CodeCleanUp(commands.Converter):
     async def convert(self, ctx: CustomContext, arg: str) -> str:
 
@@ -123,6 +122,9 @@ class SourceConvert(commands.Converter):
                 for name, _class in inspect.getmembers(module, inspect.isclass):
                     if name == argument:
                         all_classes.append(_class)
+                for name, _functions in inspect.getmembers(module, inspect.isfunction):
+                    if name == argument:
+                        all_classes.append(_functions)
             if not all_classes:
                 raise ProcessError(f"Could not convert {argument} to a valid cog, class or command.")
             all_classes = list(set(all_classes))

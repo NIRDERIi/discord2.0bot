@@ -1,4 +1,6 @@
-from utility.functions import build_embed
+import pathlib
+from utility import constants
+from utility.functions import ProcessError, build_embed
 import discord
 from discord.ext import commands
 from bot import Bot
@@ -69,6 +71,10 @@ class restrict(commands.Cog):
             "datetime": datetime,
             "importlib": importlib,
             "__file__": __file__,
+            'inspect': inspect,
+            'pathlib': pathlib,
+            'ProcessError': ProcessError,
+            'constants': constants
         }
         stdout = io.StringIO()
         to_process = f"async def func():\n{textwrap.indent(code, '    ')}"
