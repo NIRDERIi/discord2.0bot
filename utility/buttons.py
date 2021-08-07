@@ -74,6 +74,8 @@ class Paginator:
         )
         await self.ctx.send(embed=self.embeds[0], view=view)
         await view.wait()
+    def add_embed(self, embed: discord.Embed):
+        self.embeds.append(embed)
 
 
 class ButtonPaginator(discord.ui.View):

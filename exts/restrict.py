@@ -12,7 +12,7 @@ import contextlib
 import traceback
 from utility.buttons import ConfirmButtonBuild, Paginator
 from utility.decorators import restrict
-from utility.constants import Emojis
+from utility.constants import Emojis, Time
 from utility.converters import SelfLib
 import importlib
 import contextlib
@@ -21,6 +21,7 @@ from bot import CustomContext
 import git
 from utility.constants import General
 import inspect
+import more_itertools
 
 
 class restrict(commands.Cog):
@@ -237,10 +238,26 @@ class restrict(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    
     @commands.command()
-    async def br(self, ctx):
-        await ctx.guild.unban(ctx.author)
+    async def bugs(self, ctx: CustomContext):
+        async def check(interaction: discord.Interaction):
+            return interaction.user.id == ctx.author.id
+        paginator = Paginator(ctx=ctx, embeds=[], timeout=Time.BASIC_TIMEOUT(), check=check)
+        async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
+
+            data = await conn.fetch('''SELECT * FROM bugs''')
+        iterable = more_itertools.sliced(seq=data, n=4)
+        lst = [i for i in iterable]
+        for outer_lst in lst:
+            embed = discord.Embed(title='System bugs.', color=discord.Colour.blurple())
+            for record in outer_lst:
+                bug_id = record.get('bug_id') or 'None'
+                short_error = record.get('short_error') or 'None fetched properly.'
+                embed.add_field(name=f'ID {bug_id}', value=short_error, inline=False)
+            paginator.add_embed(embed=embed)
+        await paginator.run()
+
+    
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
