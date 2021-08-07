@@ -1,6 +1,6 @@
 import pathlib
 from utility import constants
-from utility.functions import ProcessError, build_embed
+from utility.functions import ProcessError, build_embed, basic_check
 import discord
 from discord.ext import commands
 from bot import Bot
@@ -255,7 +255,7 @@ class restrict(commands.Cog):
         await paginator.run()
 
     @commands.command()
-    async def bug(self, ctx, bug_id: BugInfo):
+    async def bug(self, ctx: CustomContext, bug_id: BugInfo):
         bugid, guild_name, user_name, short_error, full_traceback_link, time_string = bug_id
         embed = discord.Embed(title=f'Bug info.', color=discord.Colour.blurple())
         embed.add_field(name='Bug ID', value=f'`{bugid}`', inline=False)
@@ -265,6 +265,32 @@ class restrict(commands.Cog):
         embed.add_field(name='Error.', value=f'[FULL TRACEBACK]({full_traceback_link})', inline=False)
         embed.add_field(name='Errored.', value=f'`{time_string} ago.`')
         await ctx.send(embed=embed)
+
+
+    @commands.command()
+    async def fix(self, ctx: CustomContext, bug_id: int):
+        async def check(interaction: discord.Interaction):
+            return ctx.author.id in self.bot.allowed_users
+        async with self.bot.pool.acquire() as conn:
+            data = await conn.fetch('''SELECT * FROM bugs WHERE bug_id = ($1)''', bug_id)
+            if not data:
+                raise ProcessError(f'Bug with the id of {bug_id} was not found.')
+            
+            embed = discord.Embed(title='Confirm.', description=f'Are you sure you want to fix bug {bug_id}', color=discord.Colour.blurple())
+            view, message = await ctx.send_confirm(embed=embed, check=check)
+            if not view.value:
+                return await ctx.send(embed=build_embed(title='Process aborted.'))
+            await conn.execute('''DELETE FROM bugs WHERE bug_id = ($1)''', bug_id)
+        await ctx.send(embed=build_embed(title='Bug deleted.', description=f'Bug with the id of {bug_id} was deleted.'))
+        user = ctx.guild.get_member(data[0]['user_id']) or self.bot.get_user(data[0]['user_id']) or None
+        if not user:
+            return
+        with contextlib.suppress(discord.HTTPException, discord.Forbidden):
+            await user.send(embed=build_embed(title='Bug solved.', description=f'The bug you reported with the id of {bug_id} was solved!\nThank you for helping us make the bot better!'))
+
+
+
+
 
 def setup(bot: Bot):
     bot.add_cog(restrict(bot=bot))
