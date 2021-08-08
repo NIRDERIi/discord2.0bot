@@ -172,7 +172,8 @@ async def get_prefix(bot: Bot, message: discord.Message):
                 """SELECT prefix FROM guilds_config WHERE guild_id = ($1)""",
                 message.guild.id,
             )
-        if not data:
+        print(data)
+        if not data[0]['prefix']:
             bot.prefixes[message.guild.id] = "m!"
         else:
             prefix = data[0]["prefix"]

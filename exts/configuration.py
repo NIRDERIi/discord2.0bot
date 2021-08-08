@@ -111,8 +111,9 @@ class configuration(commands.Cog):
             )
         embed = build_embed(
             title="Changed prefix.",
-            description=f"{prefix} is not this guild new prefix.",
+            description=f"{prefix} is now this guild new prefix.",
         )
+        self.bot.prefixes[ctx.guild.id] = prefix
         await ctx.send(embed=embed)
 
     @commands.command(

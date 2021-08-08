@@ -82,6 +82,7 @@ class CharLimit(commands.Converter):
         if len(argument) > self.char_limit:
 
             raise ProcessError(f"You exceeded the char limit `{self.char_limit}`")
+        return argument
 
 
 class SourceConvert(commands.Converter):
