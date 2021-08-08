@@ -104,7 +104,7 @@ class Bot(commands.Bot):
     async def get_context(self, message, *, cls=CustomContext):
         return await super().get_context(message, cls=cls)
 
-    def get_message(self, id: int) -> discord.Message:
+    def get_message(self, id: int):
 
         return self._connection._get_message(id)
 
