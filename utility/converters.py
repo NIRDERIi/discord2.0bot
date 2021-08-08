@@ -86,7 +86,7 @@ class CharLimit(commands.Converter):
 
 
 class SourceConvert(commands.Converter):
-    async def convert(self, ctx: CustomContext, argument: str):
+    async def convert(self, ctx: CustomContext, argument: str=None):
         if not argument:
             return {'Repository': constants.General.REPO_LINK()}
         options = {}
