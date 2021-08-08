@@ -226,7 +226,7 @@ class restrict(commands.Cog):
         name="source",
         aliases=["src"],
     )
-    async def source(self, ctx: CustomContext, *, source_item: SourceConvert):
+    async def source(self, ctx: CustomContext, *, source_item: SourceConvert=None):
         embed = discord.Embed(description='')
         for key, value in source_item.items():
             embed.description += f'[{key}]({value})\n'
