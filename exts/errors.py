@@ -52,7 +52,7 @@ class ErrorHandler(commands.Cog):
             embed.description = permissions_missing
         elif isinstance(error, commands.DisabledCommand):
             embed.description = f'This command seems to be globally disabled.'
-        elif isinstance(error, ProcessError) or isinstance(new_error, ProcessError) or type(error) is ProcessError:
+        elif isinstance(error, ProcessError) or isinstance(new_error, ProcessError) or type(error) is ProcessError or type(error).__name__ == 'ProcessError':
             embed.description = str(error.args[0])
         elif isinstance(new_error, discord.NotFound):
             embed.description = f'{new_error.text}'
