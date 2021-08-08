@@ -227,6 +227,8 @@ class restrict(commands.Cog):
         aliases=["src"],
     )
     async def source(self, ctx: CustomContext, *, source_item: SourceConvert=None):
+        if not source_item:
+            source_item = {'Repository': General.REPO_LINK()}
         embed = discord.Embed(description='')
         for key, value in source_item.items():
             embed.description += f'[{key}]({value})\n'
