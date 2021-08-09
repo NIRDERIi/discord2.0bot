@@ -127,7 +127,7 @@ class SourceConvert(commands.Converter):
                     if name == argument:
                         all_classes.append(_functions)
             if not all_classes:
-                raise ProcessError(f"Could not convert {argument} to a valid cog, class or command.")
+                raise ProcessError(f"Could not convert `{argument.replace('`', '')}` to a valid cog, function, class or command.")
             all_classes = list(set(all_classes))
             for _class in all_classes:
                 file_path = inspect.getsourcefile(_class)
