@@ -17,7 +17,7 @@ class ErrorHandler(commands.Cog):
     @commands.Cog.listener(name='on_command_error')
     async def command_error_handler(self, ctx: CustomContext, error: commands.CommandError):
         new_error = getattr(error, 'original', error)
-        embed = discord.Embed(title=re.sub( '(?<!^)(?=[A-Z])', ' ', str(type(error).__name__)), color=discord.Colour.red())
+        embed = discord.Embed(title=re.sub( '(?<!^)(?=[A-Z])', ' ', str(type(new_error).__name__)), color=discord.Colour.red())
         if isinstance(error, commands.MissingRequiredArgument):
             embed.description = f'`{error.param.name}` is a required argument that is missing.'
         elif isinstance(error, commands.TooManyArguments):
