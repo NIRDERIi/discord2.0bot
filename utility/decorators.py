@@ -41,6 +41,7 @@ def mod_check(action):
     def wrapper(func):
         @functools.wraps(func)
         async def checker(*args, **kwargs):
+            print(f'mod check {action}')
             self = args[0]
             ctx: CustomContext = args[1]
             member: typing.Union[discord.Member, discord.User] = args[2]

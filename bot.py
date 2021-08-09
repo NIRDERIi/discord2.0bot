@@ -63,7 +63,7 @@ class Bot(commands.Bot):
         super().__init__(*args, **kwargs)
         self.allowed_users = [480404983372709908]
         self.prefixes = {}
-        self._session = aiohttp.ClientSession()
+        self._session: typing.Optional[aiohttp.ClientSession] = None
         self.pool = self.loop.run_until_complete(
             asyncpg.create_pool(dsn=self.retrieve_dsn, min_size=1, max_size=5)
         )
@@ -160,7 +160,12 @@ class Bot(commands.Bot):
     async def close(self):
         if self._session:
             await self._session.close()
-        return await super().close()
+        await super().close()
+    
+    async def login(self, *args, **kwargs):
+        self._session = aiohttp.ClientSession()
+        await super().login(*args, **kwargs)
+
 
 
 async def get_prefix(bot: Bot, message: discord.Message):

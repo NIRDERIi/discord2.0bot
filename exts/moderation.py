@@ -37,8 +37,8 @@ class Moderation(commands.Cog):
             return role
 
     @commands.command(name='kick', description='Kicks a member from a guild.')
-    @commands.has_guild_permissions(kick_members=True)
     @commands.bot_has_guild_permissions(kick_members=True)
+    @commands.has_guild_permissions(kick_members=True)
     @mod_check('kick')
     async def _kick(self, ctx: CustomContext, member: discord.Member, *, reason: CharLimit(char_limit=200) = 'None.'):
         await member.kick(reason=reason)
