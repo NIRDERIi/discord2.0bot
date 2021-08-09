@@ -15,8 +15,9 @@ class Moderation(commands.Cog):
         self.bot = bot
 
     def build_embed(self, user: typing.Union[discord.Member, discord.User], **kwargs):
-        embed = discord.Embed(**kwargs, timestamp=discord.utils.utcnow(), color=discord.Colour.green())
-        embed.set_footer(icon_url=user.avatar.url)
+        embed = discord.Embed(**kwargs, color=discord.Colour.green())
+        text = f'Today at {discord.utils.utcnow().strftime("%H:%M %p")}'
+        embed.set_footer(text=text, icon_url=user.avatar.url)
         return embed
 
         
@@ -43,9 +44,23 @@ class Moderation(commands.Cog):
         await member.kick(reason=reason)
         embed = self.build_embed(title='Member kicked.', description=f'{ctx.author.mention} kicked {member.name}.\n\n**Reason:** {reason}', user=ctx.author)
         await ctx.send(embed=embed)
-        embed = self.build_embed(user=member, description=f'You were kicked out from {ctx.guild.name} by {ctx.author.name}\n\n*8Reason:** {reason}')
+        embed = self.build_embed(user=member, description=f'You were kicked out from {ctx.guild.name} by {ctx.author.name}\n\n**Reason:** {reason}')
         with contextlib.suppress(discord.HTTPException, discord.Forbidden):
             await member.send(embed=embed)
+
+    @commands.command(name='ban', description='bans a member from a guild.')
+    @commands.has_guild_permissions(ban_members=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
+    @mod_check('ban')
+    async def _ban(self, ctx: CustomContext, user: typing.Union[discord.Member, discord.User], delete_message_days: typing.Optional[int], *, reason: CharLimit(char_limit=200)='None.'):
+        delete_message_days = delete_message_days or 0
+        await ctx.guild.ban(user=user, reason=reason, delete_message_days=delete_message_days)
+        embed = self.build_embed(user=ctx.author, title='User banned.', description=f'{ctx.author.mention} banned {user.name}.\n\n**Reason:** {reason}')
+        await ctx.send(embed=embed)
+        embed = self.build_embed(user=user, description=f'You were banned from {ctx.guild.name} by {ctx.author.name}\n\n**Reason:** {reason}')
+        with contextlib.suppress(discord.HTTPException, discord.Forbidden):
+            await user.send(embed=embed)
+
 
 def setup(bot: Bot):
     bot.add_cog(Moderation(bot))

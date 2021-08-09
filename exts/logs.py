@@ -106,7 +106,7 @@ class Logs(commands.Cog):
         if not webhook_url:
             async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
                 data = await conn.fetch('''SELECT webhook_url FROM guilds_config WHERE guild_id = ($1)''', guild.id)
-                if not data[0]['webhook_url']:
+                if not data:
                     return False
                 try:
                     webhook = discord.Webhook.from_url(url=data[0]['webhook_url'], session=self.bot._session)
