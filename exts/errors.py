@@ -8,6 +8,9 @@ import traceback
 import re
 from utility.constants import Time, General
 import datetime
+from utility.logger import Log
+
+log = Log('logs.log').get_logger(__name__)
 
 class ErrorHandler(commands.Cog):
 
@@ -17,6 +20,7 @@ class ErrorHandler(commands.Cog):
     @commands.Cog.listener(name='on_command_error')
     async def command_error_handler(self, ctx: CustomContext, error: commands.CommandError):
         new_error = getattr(error, 'original', error)
+        log.error(str(new_error))
         embed = discord.Embed(title=re.sub( '(?<!^)(?=[A-Z])', ' ', str(type(new_error).__name__)), color=discord.Colour.red())
         if isinstance(error, commands.MissingRequiredArgument):
             embed.description = f'`{error.param.name}` is a required argument that is missing.'
@@ -64,6 +68,7 @@ class ErrorHandler(commands.Cog):
             embed.description = f'{new_error.text} Status {new_error.status}'
         else:
             #traceback.print_exception(type(error), error, error.__traceback__)
+            log.error(f'Unhandled error: {new_error}')
             async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
                 bug_id = await conn.fetch('''INSERT INTO bugs (guild_id, user_id, short_error, full_traceback, error_time) VALUES($1, $2, $3, $4, $5) RETURNING bug_id''', ctx.guild.id, ctx.author.id, str(error), '\n'.join(traceback.format_exception(type(error), error, error.__traceback__)), datetime.datetime.utcnow())
             bug_id = bug_id[0]['bug_id']

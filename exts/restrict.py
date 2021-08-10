@@ -25,6 +25,11 @@ import git
 from utility.constants import General
 import inspect
 import more_itertools
+from utility.logger import Log
+
+log = Log('logs.log').get_logger(__name__)
+
+
 
 
 class restrict(commands.Cog):
@@ -37,6 +42,7 @@ class restrict(commands.Cog):
 
     async def cog_check(self, ctx: CustomContext):
         return ctx.author.id in self.bot.allowed_users
+
 
     @commands.command(name="libs-reload")
     async def libs_reload(self, ctx: CustomContext, *, lib_path: SelfLib()):
@@ -105,6 +111,7 @@ class restrict(commands.Cog):
                     self.eval_outputs[ctx.message.id] = message_eval
                     os.remove("NIR.txt")
         except Exception as e:
+            log.error(str(e))
             result = traceback.format_exception(type(e), e, e.__traceback__)
             result = "".join(result)
             embed = discord.Embed(description=f"```\n{result}\n```")

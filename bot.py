@@ -9,9 +9,11 @@ import utility
 import aiohttp
 import asyncpg
 import logging
+from utility.logger import Log
 
 
 BASIC_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
+log = Log('logs.log').get_logger(__name__)
 
 
 class LoggerHandler:
@@ -110,12 +112,15 @@ class Bot(commands.Bot):
 
     def reload_extension(self, name, *, package=None):
         try:
-            return super().reload_extension(name, package=package)
+            super().reload_extension(name, package=package)
+            log.cog(f'Cog reloaded: {name} - package: {package}')
         except ImportError:
             for file in os.listdir("utility"):
                 valid_file = f"utility.{file[:-3]}"
                 importlib.reload(eval(valid_file))
-                return super().reload_extension(name, package=package)
+                super().reload_extension(name, package=package)
+                log.cog(f'Cog reloaded: {name} - package: {package}')
+                
 
     def get_extensions_files(self, path: str, invalid_files: list = []):
 
@@ -128,6 +133,14 @@ class Bot(commands.Bot):
                 files.append(file[:-3])
 
         return path, files
+
+    def load_extension(self, name, *, package=None):
+        super().load_extension(name, package=package)
+        log.cog(f'Extension loaded: {name} - package: {package}')
+    
+    def unload_extension(self, name, *, package=None):
+        super().unload_extension(name, package=package)
+        log.cog(f'Unloaded extension: {name} - package: {package}')
 
     def load_extensions(self):
 
