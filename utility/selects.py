@@ -14,7 +14,6 @@ class HelpCommandView(discord.ui.View):
         for cog_name, cog_object in self.bot.cogs.items():
             if (
                 cog_name in self.bot.hidden_help_cogs
-                and self.ctx.author.id not in self.bot.allowed_users
             ):
                 continue
             item.add_option(label=cog_name, description=cog_object.__doc__)

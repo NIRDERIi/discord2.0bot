@@ -346,6 +346,7 @@ class Logs(commands.Cog):
             guild, channel, author, message_content, attachment = message_db
             if new_content == message_content:
                 return
+            old_content = message_content
         await self.update_db_message(payload.message_id, payload.data.get('content'))
         description = f'**Channel:** {channel.mention}\n\n**Author:** {author_name}#{author_discriminator}\n\n**Old content:** {old_content}\n\n**New content:** {new_content}'
         await webhook.send(embed=build_embed(title='Message edit.', description=description, timestamp=datetime.datetime.utcnow()))

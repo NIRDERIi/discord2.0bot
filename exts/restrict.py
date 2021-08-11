@@ -40,6 +40,7 @@ class restrict(commands.Cog):
         self.bot: Bot = bot
         self.eval_outputs: dict = {}
 
+
     async def cog_check(self, ctx: CustomContext):
         return ctx.author.id in self.bot.allowed_users
 

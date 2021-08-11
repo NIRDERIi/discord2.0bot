@@ -70,13 +70,16 @@ class Bot(commands.Bot):
             asyncpg.create_pool(dsn=self.retrieve_dsn, min_size=1, max_size=5)
         )
         self.accept_events = True
+        self.force_db_cache = True
         self.logs_webhooks = {}
         self.invalid_exts = []
+        self.mute_roles = {}
         self.hidden_help_cogs = [
             "GeneralEvents",
             "HelpCommand",
             "Logs",
-            "restrict"
+            "restrict",
+            'ErrorHandler'
         ]
         self.start_logger(
             name="discord",
@@ -103,6 +106,40 @@ class Bot(commands.Bot):
         )
         logger._start_handler()
 
+
+    async def cache_db(self):
+        log.info(f'Started force cache database.')
+        async with self.pool.acquire(timeout=100) as conn:
+            guilds_data = await conn.fetch('''SELECT guild_id, prefix FROM guilds_config''')
+            if not guilds_data:
+                pass
+            else:
+                for guild_record in guilds_data:
+                    if not guild_record['prefix']:
+                        self.prefixes[guild_record['guild_id']] = 'm!'
+                    else:
+                        self.prefixes[guild_record['guild_id']] = guild_record['prefix']
+            
+            webhooks_data = await conn.fetch('''SELECT guild_id, logs_channel, webhook_url FROM guilds_config''')
+            if not webhooks_data:
+                pass
+            else:
+                for guild_record in webhooks_data:
+                    if not guild_record['webhook_url']:
+                        continue
+                    self.logs_webhooks[guild_record['guild_id']] = guild_record['webhook_url']
+
+            mutes_data = await conn.fetch('''SELECT guild_id, mute_role FROM guilds_config''')
+            if not mutes_data:
+                pass
+            else:
+                for guild_record in mutes_data:
+                    if not guild_record['mute_role']:
+                        continue
+                    else:
+                        self.mute_roles[guild_record['guild_id']] = guild_record['mute_role']
+
+            log.info('Ended force cache from database.')
     async def get_context(self, message, *, cls=CustomContext):
         return await super().get_context(message, cls=cls)
 

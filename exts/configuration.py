@@ -10,6 +10,7 @@ from utility.constants import Time
 import functools
 from utility.converters import CharLimit
 import asyncio
+import contextlib
 
 
 class configuration(commands.Cog):
@@ -65,6 +66,7 @@ class configuration(commands.Cog):
                     description=f"Setted {role.mention} as the new muted role!",
                 )
             )
+            self.bot.mute_roles[ctx.guild.id] = role.id
         else:
             await ctx.send(embed=build_embed(title="Process aborted."))
 
@@ -94,6 +96,8 @@ class configuration(commands.Cog):
                     title="Confirmed.", description=f"Removed the muted role!"
                 )
             )
+            with contextlib.suppress(KeyError):
+                self.bot.mute_roles.pop(ctx.guild.id)
         else:
             await ctx.send(embed=build_embed(title="Process aborted."))
 
