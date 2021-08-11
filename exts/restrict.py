@@ -210,7 +210,7 @@ class restrict(commands.Cog):
         git_commands = [
             ["git", "add", "."],
             ["git", "commit", "-m", reason],
-            ["git", "--force", "push", "origin", "master"],
+            ["git", "-f", "push", "origin", "master"],
         ]
 
         for git_command in git_commands:
