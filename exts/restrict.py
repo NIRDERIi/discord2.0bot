@@ -65,60 +65,62 @@ class restrict(commands.Cog):
     )
     @restrict()
     async def eval(self, ctx: CustomContext, *, code: CodeCleanUp):
-        eval_env = {
-            "bot": self.bot,
-            "self": self,
-            "ctx": ctx,
-            "discord": discord,
-            "commands": commands,
-            "asyncio": asyncio,
-            "aiohttp": aiohttp,
-            "__name__": __name__,
-            "os": os,
-            "datetime": datetime,
-            "importlib": importlib,
-            "__file__": __file__,
-            'inspect': inspect,
-            'pathlib': pathlib,
-            'ProcessError': ProcessError,
-            'constants': constants
-        }
-        stdout = io.StringIO()
-        to_process = f"async def func():\n{textwrap.indent(code, '    ')}"
-        try:
-            with contextlib.redirect_stdout(stdout):
-                exec(to_process, eval_env)
-                obj = await eval_env["func"]()
-                if not obj:
-                    result = f"{stdout.getvalue()}"
-                else:
-                    result = f"{stdout.getvalue()}\n{obj}\n"
-                if not result:
-                    message_eval = await ctx.reply("None")
-                    self.eval_outputs[ctx.message.id] = message_eval
-                    return
-                if not result and not obj:
-                    message_eval = await ctx.reply("None")
-                    self.eval_outputs[ctx.message.id] = message_eval
-                    return
-                if len(result) < 1900:
-                    message_eval = await ctx.reply(result)
-                    self.eval_outputs[ctx.message.id] = message_eval
-                else:
-                    f = open("NIR.txt", mode="w", encoding="utf-8")
-                    f.write(result)
-                    f.close()
-                    message_eval = await ctx.reply(file=discord.File("NIR.txt"))
-                    self.eval_outputs[ctx.message.id] = message_eval
-                    os.remove("NIR.txt")
-        except Exception as e:
-            log.error(str(e))
-            result = traceback.format_exception(type(e), e, e.__traceback__)
-            result = "".join(result)
-            embed = discord.Embed(description=f"```\n{result}\n```")
-            message_eval = await ctx.reply(embed=embed)
-            self.eval_outputs[ctx.message.id] = message_eval
-        pass
+        async with self.bot.pool.acquire() as conn:
+            eval_env = {
+                "bot": self.bot,
+                "self": self,
+                "ctx": ctx,
+                "discord": discord,
+                "commands": commands,
+                "asyncio": asyncio,
+                "aiohttp": aiohttp,
+                "__name__": __name__,
+                "os": os,
+                "datetime": datetime,
+                "importlib": importlib,
+                "__file__": __file__,
+                'inspect': inspect,
+                'pathlib': pathlib,
+                'ProcessError': ProcessError,
+                'constants': constants,
+                'conn': conn
+            }
+            stdout = io.StringIO()
+            to_process = f"async def func():\n{textwrap.indent(code, '    ')}"
+            try:
+                with contextlib.redirect_stdout(stdout):
+                    exec(to_process, eval_env)
+                    obj = await eval_env["func"]()
+                    if not obj:
+                        result = f"{stdout.getvalue()}"
+                    else:
+                        result = f"{stdout.getvalue()}\n{obj}\n"
+                    if not result:
+                        message_eval = await ctx.reply("None")
+                        self.eval_outputs[ctx.message.id] = message_eval
+                        return
+                    if not result and not obj:
+                        message_eval = await ctx.reply("None")
+                        self.eval_outputs[ctx.message.id] = message_eval
+                        return
+                    if len(result) < 1900:
+                        message_eval = await ctx.reply(result)
+                        self.eval_outputs[ctx.message.id] = message_eval
+                    else:
+                        f = open("NIR.txt", mode="w", encoding="utf-8")
+                        f.write(result)
+                        f.close()
+                        message_eval = await ctx.reply(file=discord.File("NIR.txt"))
+                        self.eval_outputs[ctx.message.id] = message_eval
+                        os.remove("NIR.txt")
+            except Exception as e:
+                log.error(str(e))
+                result = traceback.format_exception(type(e), e, e.__traceback__)
+                result = "".join(result)
+                embed = discord.Embed(description=f"```\n{result}\n```")
+                message_eval = await ctx.reply(embed=embed)
+                self.eval_outputs[ctx.message.id] = message_eval
+            pass
 
 
     @commands.command()
