@@ -1,13 +1,16 @@
 import asyncio
+import asyncpg
 import discord
 from discord.ext import commands
+from discord.ext.commands.core import command
 from bot import Bot, CustomContext
 from utility.constants import Time
 from utility.functions import ProcessError, build_embed
 import typing
 from utility.decorators import mod_check
-from utility.converters import CharLimit
+from utility.converters import CharLimit, TimeConvert
 import contextlib
+import datetime
 
 
 class Moderation(commands.Cog):
@@ -24,9 +27,13 @@ class Moderation(commands.Cog):
         
         
 
-    async def get_muted_role(self, guild: discord.Guild):
+    async def get_muted_role(self, guild: discord.Guild) -> typing.Optional[discord.Role]:
         if self.bot.mute_roles.get(guild.id):
-            return self.bot.mute_roles[guild.id]
+            role_id = self.bot.mute_role.get(guild.id)
+            role = guild.get_role(role_id)
+            if not role:
+                raise ProcessError('This guild set muted role, but it was deleted.')
+            return role
 
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
 
@@ -38,6 +45,18 @@ class Moderation(commands.Cog):
             if not role:
                 raise ProcessError('This guild set muted role, but it was deleted.')
             return role
+    
+    async def insert_mute(self, conn: asyncpg.connection.Connection, member: discord.Member, moderator: discord.Member, seconds: int):
+        ends_at = discord.utils.utcnow() + datetime.timedelta(seconds=seconds)
+        mute_id = await conn.execute('''INSERT INTO mutes (guild_id, member_id, muted_by, muted_at, ends_at) VALUES($1, $2, $3, $4, $5) RETURNING mute_id''', member.guild.id, member.id, moderator.id, discord.utils.utcnow(), ends_at)
+        mute_id = mute_id[0]['mute_id']
+        return mute_id
+    
+    async def remove_mute(self, conn: asyncpg.connection.Connection, mute_id: int, guild_id: int):
+        await conn.execute('''DELETE FROM mutes WHERE guild_id = ($1) AND mute_id = ($2)''', guild_id, mute_id)
+
+
+
 
     @commands.command(name='kick', description='Kicks a member from a guild.')
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -95,6 +114,35 @@ class Moderation(commands.Cog):
         embed = self.build_embed(user=ctx.author, title='Process finished.', description=f'```{full}```')
         await ctx.send(embed=embed)
 
+    @commands.command(name='mute', description='Mutes the selected member for selected time.')
+    @commands.has_guild_permissions(manage_messages=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
+    @mod_check('mute')
+    async def _mute(self, ctx: CustomContext, member: discord.Member, time: TimeConvert, *, reason: CharLimit(char_limit=200)):
+        role = await self.get_muted_role(ctx.guild)
+        await member.add_roles(role, reason=reason)
+        async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
+            mute_id = await self.insert_mute(conn, member, ctx.author, time)
+        ends_at = discord.utils.format_dt(discord.utils.utcnow() + datetime.timedelta(seconds=time), style='F')
+        embed = self.build_embed(user=ctx.author, title='Member muted.', description=f'{member.mention} was muted by {ctx.author}\n\n**Reason:** {reason}\n\n**Mute id:** {mute_id}\n\n**Ends at:** {ends_at}')
+        await ctx.send(embed=embed)
+
+        if time < 3600:
+            await asyncio.sleep(time)
+            async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
+                await member.remove_roles(role, reason=f'Mute end.')
+                await self.remove_mute(conn, mute_id, ctx.guild.id)
+                await conn.close()
+
+    @commands.command(name='unmute', description='Unmuted the selected member.', aliases=['un-mute'])
+    @commands.has_guild_permissions(manage_messages=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
+    @mod_check('unmute')
+    async def unmute(self, ctx: CustomContext, member: discord.Member):
+        pass
+
+        
+        
 
 def setup(bot: Bot):
     bot.add_cog(Moderation(bot))

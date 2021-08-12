@@ -185,3 +185,20 @@ class BugInfo(commands.Converter):
             key = response['key']
             return self.bin_link_format.format(key)
 '''
+
+class TimeConvert(commands.Converter):
+
+    async def convert(self, ctx: CustomContext, argument: str):
+        if argument.isdigit() or argument.isnumeric():
+            raise ProcessError('Time input must not be an integer.')
+        dct = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+        time_mark = argument[-1].lower()
+        if time_mark not in dct:
+            raise ProcessError(f'Time duration must not be {time_mark}.\nIt has to be either of these choices: `s`, `m`, `h`, `d`')
+        seconds_input = argument[:-1]
+        if not seconds_input.isdigit():
+            raise ProcessError(f'Invalid number was input: {seconds_input}')
+        seconds = int(seconds_input * dct.get(time_mark))
+        if seconds > 15724800:
+            raise ProcessError('Time must not be longer than 6 months.')
+        return seconds
