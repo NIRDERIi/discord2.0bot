@@ -20,8 +20,8 @@
 <!-- You don't have to answer all the questions - just the ones relevant to your project. -->
 
 ## Contribute
-How to conribute:
-  Phase A - Suggestions in dev-contrib:
+- How to conribute:
+-  Phase A - Suggestions in dev-contrib:
     - step 1: Before making any code changes, please ask your issue in dev-contrib channel in the support server linked above.
     step 2: In that channel, explain the issue you are having, or any feature you'd like to add, and wait for an authorized user to allow you to move to the next step, or declining the offer.
     
