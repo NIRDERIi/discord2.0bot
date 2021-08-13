@@ -70,7 +70,7 @@ class Bot(commands.Bot):
             asyncpg.create_pool(dsn=self.retrieve_dsn, min_size=1, max_size=5)
         )
         self.accept_events = True
-        self.force_db_cache = True
+        self.force_db_cache = False
         self.logs_webhooks = {}
         self.invalid_exts = []
         self.mute_roles = {}
@@ -129,15 +129,15 @@ class Bot(commands.Bot):
                         continue
                     self.logs_webhooks[guild_record['guild_id']] = guild_record['webhook_url']
 
-            mutes_data = await conn.fetch('''SELECT guild_id, mute_role FROM guilds_config''')
+            mutes_data = await conn.fetch('''SELECT guild_id, muted_role FROM guilds_config''')
             if not mutes_data:
                 pass
             else:
                 for guild_record in mutes_data:
-                    if not guild_record['mute_role']:
+                    if not guild_record['muted_role']:
                         continue
                     else:
-                        self.mute_roles[guild_record['guild_id']] = guild_record['mute_role']
+                        self.mute_roles[guild_record['guild_id']] = guild_record['muted_role']
 
             log.info('Ended force cache from database.')
     async def get_context(self, message, *, cls=CustomContext):
@@ -213,6 +213,9 @@ class Bot(commands.Bot):
         await super().close()
     
     async def login(self, *args, **kwargs):
+        if self.force_db_cache:
+            log.info('Forcing database cache enabled.')
+            await self.cache_db()
         self._session = aiohttp.ClientSession()
         await super().login(*args, **kwargs)
 

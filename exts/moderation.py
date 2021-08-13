@@ -57,7 +57,7 @@ class Moderation(commands.Cog):
 
     async def is_muted(self, conn: asyncpg.connection.Connection, member: discord.Member):
         data = await conn.fetch('''SELECT * FROM mutes WHERE member_id = ($1) AND guild_id = ($2)''', member.id, member.guild.id)
-        if not data:
+        if data:
             return True
         return False
 
@@ -125,11 +125,11 @@ class Moderation(commands.Cog):
     @mod_check('mute')
     async def _mute(self, ctx: CustomContext, member: discord.Member, time: TimeConvert, *, reason: CharLimit(char_limit=200)):
         role = await self.get_muted_role(ctx.guild)
-        await member.add_roles(role, reason=reason)
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
             is_muted = await self.is_muted(conn, member)
             if is_muted or role in member.roles:
-                raise ProcessError('This member is already muted, or already have te muted role.')
+                raise ProcessError('This member is already muted, or already have the muted role.')
+            await member.add_roles(role, reason=reason)
             mute_id = await self.insert_mute(conn, member, ctx.author, time)
         ends_at = discord.utils.format_dt(discord.utils.utcnow() + datetime.timedelta(seconds=time), style='F')
         embed = self.build_embed(user=ctx.author, title='Member muted.', description=f'{member.mention} was muted by {ctx.author}\n\n**Reason:** {reason}\n\n**Mute id:** {mute_id}\n\n**Ends at:** {ends_at}')
@@ -156,8 +156,8 @@ class Moderation(commands.Cog):
         await member.remove_roles(role, reason='Unmuted command.')
         embed = self.build_embed(user=ctx.author, title='Member unmuted.', description=f'{ctx.author.mention} removed the mute for {member.mention}')
         await ctx.send(embed=embed)
-        
-        
+
+    
 
 def setup(bot: Bot):
     bot.add_cog(Moderation(bot))
