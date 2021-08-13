@@ -166,7 +166,7 @@ class Moderation(commands.Cog):
     @mod_check('warn')
     async def warn(self, ctx: CustomContext, member: discord.Member, *, reason: CharLimit(char_limit=150)='None.'):
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
-            warn_id = await self.insert_warn(conn, member, ctx.author)
+            warn_id = await self.insert_warn(conn, member, ctx.author, reason)
         embed = self.build_embed(user=ctx.author, title='Member warned.', description=f'{member.mention} was warned by {ctx.author}\n\n**Reason:** {reason}')
         await ctx.send(embed=embed)
     
