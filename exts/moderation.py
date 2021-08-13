@@ -48,7 +48,7 @@ class Moderation(commands.Cog):
     
     async def insert_mute(self, conn: asyncpg.connection.Connection, member: discord.Member, moderator: discord.Member, seconds: int, reason: str):
         ends_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
-        mute_id = await conn.fetch('''INSERT INTO mutes (guild_id, member_id, muted_by, reason, muted_at, ends_at) VALUES($1, $2, $3, $4, $5) RETURNING mute_id''', member.guild.id, member.id, moderator.id, reason, datetime.datetime.utcnow(), ends_at)
+        mute_id = await conn.fetch('''INSERT INTO mutes (guild_id, member_id, muted_by, reason, muted_at, ends_at) VALUES($1, $2, $3, $4, $5, $6) RETURNING mute_id''', member.guild.id, member.id, moderator.id, reason, datetime.datetime.utcnow(), ends_at)
         mute_id = mute_id[0]['mute_id']
         return mute_id
     
