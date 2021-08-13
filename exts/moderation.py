@@ -2,7 +2,7 @@ import asyncio
 from utility.buttons import Paginator
 import asyncpg
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands.core import command
 import more_itertools
 from bot import Bot, CustomContext
@@ -13,12 +13,17 @@ from utility.decorators import mod_check
 from utility.converters import CharLimit, TimeConvert
 import contextlib
 import datetime
+from utility.logger import Log
+log = Log('logs.log').get_logger(__name__)
 
 
 class Moderation(commands.Cog):
     
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
+        self.mutes.start()
+        log.info('Moderation cog initialized, starting mutes loop.')
+        self.channel_spam_cooldown = commands.CooldownMapping.from_cooldown(rate=3, per=3, type=commands.BucketType.channel)
 
     def build_embed(self, user: typing.Union[discord.Member, discord.User], **kwargs):
         embed = discord.Embed(**kwargs, color=discord.Colour.green())
@@ -29,7 +34,7 @@ class Moderation(commands.Cog):
         
         
 
-    async def get_muted_role(self, guild: discord.Guild) -> typing.Optional[discord.Role]:
+    async def get_muted_role(self, conn: asyncpg.connection.Connection, guild: discord.Guild) -> typing.Optional[discord.Role]:
         if self.bot.mute_roles.get(guild.id):
             role_id = self.bot.mute_roles.get(guild.id)
             role = guild.get_role(role_id)
@@ -37,16 +42,15 @@ class Moderation(commands.Cog):
                 raise ProcessError('This guild set muted role, but it was deleted.')
             return role
 
-        async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
 
-            data = await conn.fetch('''SELECT muted_role FROM guilds_config WHERE guild_id = ($1)''', guild.id)
-            if not data:
-                raise ProcessError('This guild didn\'t set muted role.')
-            muted_role_id = data[0]['muted_role']
-            role = guild.get_role(muted_role_id)
-            if not role:
-                raise ProcessError('This guild set muted role, but it was deleted.')
-            return role
+        data = await conn.fetch('''SELECT muted_role FROM guilds_config WHERE guild_id = ($1)''', guild.id)
+        if not data:
+            raise ProcessError('This guild didn\'t set muted role.')
+        muted_role_id = data[0]['muted_role']
+        role = guild.get_role(muted_role_id)
+        if not role:
+            raise ProcessError('This guild set muted role, but it was deleted.')
+        return role
     
     async def insert_mute(self, conn: asyncpg.connection.Connection, member: discord.Member, moderator: discord.Member, seconds: int, reason: str):
         ends_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
@@ -129,8 +133,8 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @mod_check('mute')
     async def _mute(self, ctx: CustomContext, member: discord.Member, time: TimeConvert, *, reason: CharLimit(char_limit=200)):
-        role = await self.get_muted_role(ctx.guild)
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
+            role = await self.get_muted_role(conn, ctx.guild)
             is_muted = await self.is_muted(conn, member)
             if is_muted or role in member.roles:
                 raise ProcessError('This member is already muted, or already have the muted role.')
@@ -152,9 +156,8 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(manage_roles=True)
     @mod_check('unmute')
     async def unmute(self, ctx: CustomContext, member: discord.Member):
-        role = await self.get_muted_role(ctx.guild)
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
-
+            role = await self.get_muted_role(ctx.guild)
             await self.remove_mute(conn, member)
         if role not in member.roles:
             raise ProcessError(f'{member} does not have the muted role.')
@@ -232,6 +235,35 @@ class Moderation(commands.Cog):
             return interaction.user.id == ctx.author.id
         paginator = Paginator(ctx=ctx, embeds=embeds, timeout=Time.BASIC_TIMEOUT(), check=check)
         await paginator.run()
+
+    @tasks.loop(minutes=1)
+    async def mutes(self):
+        async with self.bot.pool.acquire(timeout=20) as conn:
+            data = await conn.fetch('''SELECT * FROM mutes WHERE ends_at < ($1)''', datetime.datetime.utcnow())
+            if not data:
+                return
+            for record in data:
+                guild = self.bot.get_guild(record['guild_id'])
+                if not guild:
+                    log.info(f'Guild {record["guild_id"]} fetch failed.')
+                    return
+                try:
+                    role = await self.get_muted_role(conn, guild)
+                except ProcessError as e:
+                    log.info(f'Getting role for {guild} failed. {e}')
+                member = guild.get_member(record['member_id'])
+                if not member:
+                    log.info(f'Getting member {record["member_id"]} failed.')
+                await member.remove_roles(role, reason='Mute end.')
+                await self.remove_mute(conn, member)
+                await asyncio.sleep(1)
+            await asyncio.sleep(1)
+        pass
+
+    @mutes.before_loop
+    async def wait_until_ready_loop(self):
+        await self.bot.wait_until_ready()
+        log.info(f'Before mute loop. Waited for internal cache.')
     
 
 def setup(bot: Bot):
