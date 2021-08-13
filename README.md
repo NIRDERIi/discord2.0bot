@@ -23,25 +23,25 @@
 - How to conribute:
 -  Phase A - Suggestions in dev-contrib:
     - step 1: Before making any code changes, please ask your issue in dev-contrib channel in the support server linked above.
-    step 2: In that channel, explain the issue you are having, or any feature you'd like to add, and wait for an authorized user to allow you to move to the next step, or declining the offer.
+    - step 2: In that channel, explain the issue you are having, or any feature you'd like to add, and wait for an authorized user to allow you to move to the next step, or declining the offer.
     
-  If your suggestion was declined, there is no need to move to Phase B.
-  If your suggestio was approved, you may go to Phase B.
+  > If your suggestion was declined, there is no need to move to Phase B.
+  > If your suggestio was approved, you may go to Phase B.
    
-  Phase B - Open an issue:
-    step 1: Open an issue that explains what bug you'd like to be fixed, or what feature you'd like to add.
-    step 2: Answers any questions relating to the issue.
-    step 3: Wait for an authorized member to approve the issue, or decline it.
-  If your issue was declined, unfortunately, there is nothing you can really do.
-  If your issue was approved, the next Phase it to open a PR, where you make the changes yourself in the code.
-  If you do not know how to fix the issue, please go to the support server linked above, and ask in dev-contrib channel for someone to do it for you.
-  Phase C - Open a PR(Pull Request):
-    step 1: Open a PR where the first line says: `Solves #issue number`, with a short explanation about the idea.
-    step 2: Take advices from other contributers relating on how to solve the issue.
-    step 3: If you do have the solution, fork the reposiotry, make the changes and submit them to the PR, comparing the bot repos.
-    step 4: Wait for an authorized member to approve the changes, or make any comment suggesting to improve them.
-    step 5: Once your PR was approved, you may close the PR.
-  If you got here, it means you helped the bot, thank you very much!
+-  Phase B - Open an issue:
+   - step 1: Open an issue that explains what bug you'd like to be fixed, or what feature you'd like to add.
+   - step 2: Answers any questions relating to the issue.
+   - step 3: Wait for an authorized member to approve the issue, or decline it.
+  > If your issue was declined, unfortunately, there is nothing you can really do.
+  > If your issue was approved, the next Phase it to open a PR, where you make the changes yourself in the code.
+  > If you do not know how to fix the issue, please go to the support server linked above, and ask in dev-contrib channel for someone to do it for you.
+-  Phase C - Open a PR(Pull Request):
+   - step 1: Open a PR where the first line says: `Solves #issue number`, with a short explanation about the idea.
+   - step 2: Take advices from other contributers relating on how to solve the issue.
+   - step 3: If you do have the solution, fork the reposiotry, make the changes and submit them to the PR, comparing the bot repos.
+   - step 4: Wait for an authorized member to approve the changes, or make any comment suggesting to improve them.
+   - step 5: Once your PR was approved, you may close the PR.
+  > If you got here, it means you helped the bot, thank you very much!
 
 ## Technologies Used
 - Python - version 3.9
