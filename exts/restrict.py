@@ -280,8 +280,10 @@ class restrict(commands.Cog):
             embed.add_field(name='Traceback.', value=f'[Traceback]({link})', inline=False)
             await ctx.send(embed=embed)
         except Exception as e:
+            async def check(interaction: discord.Interaction):
+                return interaction.user.id in self.bot.allowed_users
             print(e)
-            view, message = await ctx.send_confirm(embed=embed, content='Would you like to get the traceback?')
+            view, message = await ctx.send_confirm(embed=embed, content='Would you like to get the traceback?', check=check)
             if not view.value:
                 return
             file = open('error.txt', 'w')

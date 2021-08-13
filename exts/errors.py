@@ -1,4 +1,5 @@
 from asyncio.subprocess import Process
+import contextlib
 from utility.functions import ProcessError
 import discord
 from discord.ext import commands
@@ -75,8 +76,8 @@ class ErrorHandler(commands.Cog):
             embed.title = type(error).__name__
             embed.description = f'Unknown error. Please report it in [support server]({General.SUPPORT_SERVER()}).\n**Bug id:** {bug_id}'
 
-
-        await ctx.send(embed=embed)
+        with contextlib.suppress(discord.HTTPException, discord.Forbidden, discord.NotFound):
+            await ctx.send(embed=embed)
 
 
 def setup(bot: Bot):

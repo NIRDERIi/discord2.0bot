@@ -1,8 +1,10 @@
 import asyncio
+from utility.buttons import Paginator
 import asyncpg
 import discord
 from discord.ext import commands
 from discord.ext.commands.core import command
+import more_itertools
 from bot import Bot, CustomContext
 from utility.constants import Time
 from utility.functions import ProcessError, build_embed
@@ -167,8 +169,69 @@ class Moderation(commands.Cog):
     async def warn(self, ctx: CustomContext, member: discord.Member, *, reason: CharLimit(char_limit=150)='None.'):
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
             warn_id = await self.insert_warn(conn, member, ctx.author, reason)
-        embed = self.build_embed(user=ctx.author, title='Member warned.', description=f'{member.mention} was warned by {ctx.author}\n\n**Warn id:** {warn_id}\n\n**Reason:** {reason}', )
+        embed = self.build_embed(user=ctx.author, title='Member warned.', description=f'{member.mention} was warned by {ctx.author}\n\n**Warn id:** `{warn_id}`\n\n**Reason:** {reason}', )
         await ctx.send(embed=embed)
+
+    @commands.command(name='unwarn', description='Removes a warning for the selected member.', aliases=['un-warn', 'remove-warn'])
+    @commands.has_guild_permissions(manage_messages=True)
+    @mod_check('unwarn')
+    async def unwarn(self, ctx: CustomContext, member: discord.Member, warn_id: int):
+        async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
+            data = await conn.fetch('''SELECT * FROM warnings WHERE guild_id = ($1) AND member_id = ($2) AND warn_id = ($3)''', ctx.guild.id, member.id, warn_id)
+            if not data:
+                raise ProcessError(f'Could not find any warn with these credentials.')
+            record = data[0]
+            warned_by_id = record['warned_by']
+            warned_by = ctx.guild.get_member(warned_by_id) or self.bot.get_user(warned_by_id) or f'Not found. ID: {warned_by_id}'
+            reason = record['reason']
+            warned_at = record['warned_at']
+            timestamp_warned_at = discord.utils.format_dt(warned_at, style='F')
+            description = f'Are you sure you\'d like to delete this warning?\n\n\n*"*Warn id:** {warn_id}\n\n**Warned by:** {warned_by}\n\n**Reason:** {reason}\n\n**Warned at:** {timestamp_warned_at}'
+            embed = self.build_embed(user=ctx.author, title='Delete warn.', description=description)
+            async def check(interaction: discord.Interaction):
+                return interaction.user.id == ctx.author.id
+            view, message = await ctx.send_confirm(embed=embed, check=check)
+            if not view.value:
+                return await ctx.send(embed=self.build_embed(user=ctx.author, title='Process aborted.'))
+            await conn.execute('''DELETE FROM warnings WHERE guild_id = ($1) AND member_id = ($2) AND warn_id = ($3)''', ctx.guild.id, member.id, warn_id)
+        await ctx.send(embed=self.build_embed(user=ctx.author, title='Warne deleted.', description=f'The warning for {member} was deleted.'))
+
+
+    @commands.command(name='infractions', description='Shows all current infractions for a member. Mute and warn.')
+    @commands.has_guild_permissions(manage_messages=True)
+    async def infractions(self, ctx: CustomContext, member: discord.Member):
+        async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()+10) as conn:
+            mutes = await conn.fetch('''SELECT * FROM mutes WHERE guild_id = ($1) AND member_id = ($2)''', ctx.guild.id, member.id)
+            warnings = await conn.fetch('''SELECT * FROM warnings WHERE guild_id = ($1) AND member_id = ($2)''', ctx.guild.id, member.id)
+        embeds = []
+        if mutes:
+            for record in mutes:
+                embed = discord.Embed(title='Mute infraction.', description='', color=discord.Colour.blurple())
+                mute_id = record['mute_id']
+                muted_by_id = record['muted_by']
+                muted_by = ctx.guild.get_member(muted_by_id) or self.bot.get_user(muted_by_id) or f'Couldn\'t fetch. ID ({muted_by_id})'
+                reason = record['reason']
+                muted_at_timestamp = discord.utils.format_dt(record['muted_at'], style='F')
+                ends_at_timestamp = discord.utils.format_dt(record['ends_at'], style='F')
+                embed.description += f'**Mute id:** {mute_id}\n\n**Muted by:** {muted_by}\n\n**Reason:** {reason}\n\n**Muted at:** {muted_at_timestamp}\n\n**Ends at:** {ends_at_timestamp}'
+                embeds.append(embed)
+        if warnings:
+            for record in warnings:
+                embed = discord.Embed(title='Warning infraction.', description='', color=discord.Colour.blurple())
+                warn_id = record['warn_id']
+                warned_by_id = record['warned_by']
+                warned_by = ctx.guild.get_member(warned_by_id) or self.bot.get_user(warned_by_id) or f'Couldn\'t fetch. ID ({muted_by_id})'
+                reason = record['reason']
+                warned_at_timestamp = discord.utils.format_dt(record['warned_at'], style='F')
+                embed.description += f'**Warn id:** {warn_id}\n\n**Warned by:** {warned_by}\n\n**Reason:** {reason}\n\n**Warned at:** {warned_at_timestamp}'
+                embeds.append(embed)
+
+        if not embeds:
+            return await ctx.send(embed=self.build_embed(user=ctx.author, description=f'{member.mention} does not have any infractions in this guild.'))
+        async def check(interaction: discord.Interaction):
+            return interaction.user.id == ctx.author.id
+        paginator = Paginator(ctx=ctx, embeds=embeds, timeout=Time.BASIC_TIMEOUT(), check=check)
+        await paginator.run()
     
 
 def setup(bot: Bot):
