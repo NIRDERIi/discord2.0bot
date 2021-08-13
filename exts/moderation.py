@@ -61,7 +61,10 @@ class Moderation(commands.Cog):
             return True
         return False
 
-
+    async def insert_warn(self, conn: asyncpg.connection.Connection, member: discord.Member, moderator: discord.Member, reason: str):
+        warn_id = await conn.fetch('''INSERT INTO warnings (guild_id, member_id, warned_by, reason, warned_at) VALUES($1, $2, $3, $4, $5) RETURNING warn_id''', member.guild.id, member.id, moderator.id, reason, datetime.datetime.utcnow())
+        warn_id = warn_id[0]['warn_id']
+        return warn_id
 
     @commands.command(name='kick', description='Kicks a member from a guild.')
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -157,6 +160,15 @@ class Moderation(commands.Cog):
         embed = self.build_embed(user=ctx.author, title='Member unmuted.', description=f'{ctx.author.mention} removed the mute for {member.mention}')
         await ctx.send(embed=embed)
 
+
+    @commands.command(name='warn', description='Warns the selected member.')
+    @commands.has_guild_permissions(manage_messages=True)
+    @mod_check('warn')
+    async def warn(self, ctx: CustomContext, member: discord.Member, *, reason: CharLimit(char_limit=150)='None.'):
+        async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
+            warn_id = await self.insert_warn(conn, member, ctx.author)
+        embed = self.build_embed(user=ctx.author, title='Member warned.', description=f'{member.mention} was warned by {ctx.author}\n\n**Reason:** {reason}')
+        await ctx.send(embed=embed)
     
 
 def setup(bot: Bot):
