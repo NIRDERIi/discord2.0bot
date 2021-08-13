@@ -46,9 +46,9 @@ class Moderation(commands.Cog):
                 raise ProcessError('This guild set muted role, but it was deleted.')
             return role
     
-    async def insert_mute(self, conn: asyncpg.connection.Connection, member: discord.Member, moderator: discord.Member, seconds: int):
+    async def insert_mute(self, conn: asyncpg.connection.Connection, member: discord.Member, moderator: discord.Member, seconds: int, reason: str):
         ends_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
-        mute_id = await conn.fetch('''INSERT INTO mutes (guild_id, member_id, muted_by, muted_at, ends_at) VALUES($1, $2, $3, $4, $5) RETURNING mute_id''', member.guild.id, member.id, moderator.id, datetime.datetime.utcnow(), ends_at)
+        mute_id = await conn.fetch('''INSERT INTO mutes (guild_id, member_id, muted_by, reason, muted_at, ends_at) VALUES($1, $2, $3, $4, $5) RETURNING mute_id''', member.guild.id, member.id, moderator.id, reason, datetime.datetime.utcnow(), ends_at)
         mute_id = mute_id[0]['mute_id']
         return mute_id
     
@@ -130,7 +130,7 @@ class Moderation(commands.Cog):
             if is_muted or role in member.roles:
                 raise ProcessError('This member is already muted, or already have the muted role.')
             await member.add_roles(role, reason=reason)
-            mute_id = await self.insert_mute(conn, member, ctx.author, time)
+            mute_id = await self.insert_mute(conn, member, ctx.author, time, reason)
         ends_at = discord.utils.format_dt(discord.utils.utcnow() + datetime.timedelta(seconds=time), style='F')
         embed = self.build_embed(user=ctx.author, title='Member muted.', description=f'{member.mention} was muted by {ctx.author}\n\n**Reason:** {reason}\n\n**Mute id:** {mute_id}\n\n**Ends at:** {ends_at}')
         await ctx.send(embed=embed)

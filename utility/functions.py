@@ -17,6 +17,9 @@ class ProcessError(commands.CommandError):
     pass
 
 
+class BadStatus(commands.CommandError):
+    pass
+
 async def start_cog_help(ctx, cog_name: str):
     async def check(interaction):
         return interaction.user.id == ctx.author.id
@@ -105,6 +108,8 @@ async def error_pastebin(bot: Bot, text: str):
 
     data = bytes(str(text), encoding='utf-8')
     async with bot._session.post(url=BIN_LINK, data=data) as raw_response:
-        response = await raw_response.json(content_type=None)
+        if raw_response.status != 200:
+            raise BadStatus(f'Status: {raw_response.status}')
+        response = await raw_response.json(content_type=None, encoding='utf-8')
         key = response['key']
         return BIN_LINK_FORMAT.format(key)

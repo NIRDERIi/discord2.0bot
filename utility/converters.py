@@ -1,6 +1,6 @@
 import datetime
 from discord import guild
-from utility.functions import ProcessError, build_embed, find_path, error_pastebin, get_divmod
+from utility.functions import ProcessError, build_embed, find_path, error_pastebin, get_divmod, BadStatus
 import discord
 from discord.ext import commands
 from . import constants
@@ -155,7 +155,7 @@ class SourceConvert(commands.Converter):
 
 
 class BugInfo(commands.Converter):
-
+    
     async def convert(self, ctx: CustomContext, argument: str) -> typing.List[str]:
         bot: Bot = ctx.bot
         if not argument.isdigit():
@@ -170,10 +170,11 @@ class BugInfo(commands.Converter):
         guild_name = bot.get_guild(record['guild_id']) or 'Couldn\'t fetch.'
         user_name = bot.get_user(record['user_id']) or 'Couldn\'t fetch.'
         short_error = record['short_error'] or 'Couldn\'t fetch.'
-        full_traceback_link = await error_pastebin(bot, record['full_traceback'])
+        full_traceback = record['full_traceback']
+
         days, hours, minutes, seconds = get_divmod((datetime.datetime.utcnow() - record['error_time']).total_seconds())
         time_string = f'{days}d, {hours}h, {minutes}m, {seconds}s'
-        return bug_id, guild_name, user_name, short_error, full_traceback_link, time_string
+        return bug_id, guild_name, user_name, short_error, full_traceback, time_string
 
 
 

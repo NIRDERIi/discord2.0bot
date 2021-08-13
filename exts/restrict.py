@@ -1,6 +1,6 @@
 import pathlib
 from utility import constants
-from utility.functions import ProcessError, build_embed, basic_check
+from utility.functions import ProcessError, build_embed, basic_check, error_pastebin
 import discord
 from discord.ext import commands
 from bot import Bot
@@ -268,15 +268,29 @@ class restrict(commands.Cog):
 
     @commands.command()
     async def bug(self, ctx: CustomContext, bug_id: BugInfo):
-        bugid, guild_name, user_name, short_error, full_traceback_link, time_string = bug_id
+        bugid, guild_name, user_name, short_error, full_traceback, time_string = bug_id
         embed = discord.Embed(title=f'Bug info.', color=discord.Colour.blurple())
         embed.add_field(name='Bug ID', value=f'`{bugid}`', inline=False)
         embed.add_field(name='Guild name.', value=f'{guild_name}', inline=False)
         embed.add_field(name='User name.', value=f'{user_name}', inline=False)
         embed.add_field(name='Short error.', value=short_error, inline=False)
-        embed.add_field(name='Error.', value=f'[FULL TRACEBACK]({full_traceback_link})', inline=False)
         embed.add_field(name='Errored.', value=f'`{time_string} ago.`')
-        await ctx.send(embed=embed)
+        try:
+            link = await error_pastebin(self.bot, full_traceback)
+            embed.add_field(name='Traceback.', value=f'[Traceback]({link})', inline=False)
+            await ctx.send(embed=embed)
+        except Exception as e:
+            print(e)
+            view, message = await ctx.send_confirm(embed=embed, content='Would you like to get the traceback?')
+            if not view.value:
+                return
+            file = open('error.txt', 'w')
+            file.write(full_traceback)
+            file.close()
+            await ctx.send(file=discord.File('error.txt'))
+            os.remove('error.txt')
+
+
 
 
     @commands.command()
