@@ -112,12 +112,16 @@ class Logs(commands.Cog):
                     webhook = discord.Webhook.from_url(url=data[0]['webhook_url'], session=self.bot._session)
                 except discord.InvalidArgument:
                     return False
+                except TypeError:
+                    return False
                 webhook_url = webhook.url
                 self.bot.logs_webhooks[guild.id] = webhook_url
         webhook_url = self.bot.logs_webhooks.get(guild.id)
         try:
             webhook = discord.Webhook.from_url(url=webhook_url, session=self.bot._session)
         except discord.InvalidArgument:
+            return False
+        except TypeError:
             return False
         return webhook
 

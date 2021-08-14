@@ -74,3 +74,7 @@ class General:
     @staticmethod
     def SUPPORT_SERVER():
         return "https://discord.gg/htTeS6qfNg"
+
+    @staticmethod
+    def GITHUB_IMAGE():
+        return 'https://avatars.githubusercontent.com/u/9919?s=200&v=4'

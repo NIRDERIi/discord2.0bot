@@ -5,6 +5,8 @@ from discord.ext import commands
 from bot import Bot, CustomContext
 from utility.converters import CharLimit
 from utility.buttons import Paginator
+from dateutil.parser import parse
+from utility.constants import General
 
 
 class Fun(commands.Cog):
@@ -15,6 +17,7 @@ class Fun(commands.Cog):
         self.stackoverflow_url = 'https://api.stackexchange.com/2.2/search/advanced'
         self.realpython_url = 'https://realpython.com/search/api/v1/?'
         self.realpython_basic_url = 'https://realpython.com{url}'
+        self.github_api = 'https://api.github.com'
 
     @commands.command(name='stackoverflow', description='Shows top 3 resultes on stackoverflow.', aliases=['so'])
     async def stackoverflow(self, ctx: CustomContext, *, query: CharLimit(char_limit=100)):
@@ -66,7 +69,9 @@ class Fun(commands.Cog):
                 title = project.get('title')
                 project_description = project.get('description')
                 full_link = self.realpython_basic_url.format(url=project.get('url'))
-                publish_date = discord.utils.format_dt(datetime.datetime.fromisoformat(project.get('pub_date')))
+                publish_date = 'Not found.'
+                if project.get('pub_date'):
+                    publish_date = discord.utils.format_dt(datetime.datetime.fromisoformat(project.get('pub_date')))
                 image_url = project.get('image_url')
                 categories = ', '.join([f'`{category}`' for category in project.get('categories')])
                 description = f'**Description:** {project_description}\n\n**Kind:** {kind}\n\n**Link:** ({full_link})\n\n**Publish date:** {publish_date}\n\n**Categories:** {categories}'
@@ -79,6 +84,35 @@ class Fun(commands.Cog):
                 return interaction.user.id == ctx.author.id
             paginator = Paginator(ctx=ctx, embeds=embeds, timeout=20.0, check=check)
             await paginator.run()
+
+    @commands.command(name='github-user', description='Shows info about github user.')
+    async def github_user(self, ctx: CustomContext, *, name: CharLimit(char_limit=50)):
+        async with self.bot._session.get(url=f'{self.github_api}/users/{name}') as response:
+            if response.status != 200:
+                raise ProcessError(self.bad_status.format(status=response.status))
+            data = await response.json(content_type=None)
+        login = data.get('login')
+        user_id = data.get('id')
+        avatar_url = data.get('avatar_url')
+        url = data.get('html_url')
+        email = data.get('email') or 'None.'
+        bio = data.get('bio') or 'None.'
+        repos = data.get('public_repos')
+        gists = data.get('public_gists')
+        followers = data.get('followers')
+        following = data.get('following')
+        created_at_time = data.get('created_at')
+        updated_at_time = data.get('updated_at')
+        created_at = discord.utils.format_dt(parse(created_at_time), style='F')
+        updated_at = discord.utils.format_dt(parse(updated_at_time), style='F')
+        description = f'**User id:** {user_id}\n\n**Bio:** {bio}\n\n**Public repos:** {repos}\n\n**Public gists:** {gists}\n\n**Followers:** {followers}\n\n**Following:** {following}\n\n**Created at:** {created_at}\n\n**Updated at:** {updated_at}'
+        embed = discord.Embed(title='Github user info.', description=description, color=discord.Colour.blurple())
+        embed.set_author(name=login, url=url, icon_url=avatar_url)
+        embed.set_thumbnail(url=General.GITHUB_IMAGE())
+        await ctx.send(embed=embed)
+        
+
+            
 
 
 
