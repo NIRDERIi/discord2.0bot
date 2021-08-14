@@ -61,7 +61,7 @@ class Fun(commands.Cog):
             if not data.get('results'):
                 raise ProcessError(self.not_found.format(query=query))
             embeds = []
-            for project in data:
+            for project in data.get('results'):
                 kind = project.get('kind')
                 title = project.get('title')
                 project_description = project.get('description')
@@ -69,8 +69,16 @@ class Fun(commands.Cog):
                 publish_date = discord.utils.format_dt(datetime.datetime.fromisoformat(project.get('pub_date')))
                 image_url = project.get('image_url')
                 categories = ', '.join([f'`{category}`' for category in project.get('categories')])
-                description = f'**Description:** {project_description}\n\n**Kind:** {kind}'
+                description = f'**Description:** {project_description}\n\n**Kind:** {kind}\n\n**Link:** ({full_link})\n\n**Publish date:** {publish_date}\n\n**Categories:** {categories}'
                 embed = discord.Embed(title=title, description=description)
+                embed.set_image(url=image_url)
+                embeds.append(embed)
+            if not embed:
+                raise ProcessError(self.not_found(query=query))
+            async def check(interaction: discord.Interaction):
+                return interaction.user.id == ctx.author.id
+            paginator = Paginator(ctx=ctx, embeds=embeds, timeout=20.0, check=check)
+            await paginator.run()
 
 
 
