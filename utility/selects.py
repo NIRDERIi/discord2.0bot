@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 import typing
+
+from discord.ext.commands.core import check
 from . import functions
 from bot import CustomContext, Bot
 
@@ -18,6 +20,9 @@ class HelpCommandView(discord.ui.View):
                 continue
             item.add_option(label=cog_name, description=cog_object.__doc__)
         self.add_item(item=item)
+        async def check(interaction: discord.Interaction):
+            return interaction.user.id == ctx.author.id
+        self.interaction_check = check
 
     async def on_timeout(self) -> None:
         try:
@@ -25,6 +30,7 @@ class HelpCommandView(discord.ui.View):
         except Exception as e:
             pass
         return await super().on_timeout()
+    
 
 
 class HelpCommandSelect(discord.ui.Select):
