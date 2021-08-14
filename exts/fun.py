@@ -105,13 +105,20 @@ class Fun(commands.Cog):
         updated_at_time = data.get('updated_at')
         created_at = discord.utils.format_dt(parse(created_at_time), style='F')
         updated_at = discord.utils.format_dt(parse(updated_at_time), style='F')
-        description = f'**User id:** {user_id}\n\n**Bio:** {bio}\n\n**Public repos:** {repos}\n\n**Public gists:** {gists}\n\n**Followers:** {followers}\n\n**Following:** {following}\n\n**Created at:** {created_at}\n\n**Updated at:** {updated_at}'
+        description = f'**User id:** {user_id}\n**Bio:** {bio}\n**Public repos:** {repos}\n**Public gists:** {gists}\n**Followers:** {followers}\n**Following:** {following}\n**Created at:** {created_at}\n**Updated at:** {updated_at}'
         embed = discord.Embed(title='Github user info.', description=description, color=discord.Colour.blurple())
         embed.set_author(name=login, url=url, icon_url=avatar_url)
         embed.set_thumbnail(url=General.GITHUB_IMAGE())
         await ctx.send(embed=embed)
         
-
+    @commands.command(name='repo', description='Shows info about a specific repo.')
+    async def repo(self, ctx: CustomContext, *, query: CharLimit(char_limit=100)):
+        if query.count('/') != 1:
+            raise ProcessError(f'Invalid input. Please make sure this is the format you use: USERNAME/REPONAME')
+        async with self.bot._session.get(url=f'{self.github_api}/repos/{query}') as response:
+            if response.status != 200:
+                raise ProcessError(self.bad_status(status=response.status))
+            data = await response.json(encoding='utf-8' ,content_type=None)
             
 
 
