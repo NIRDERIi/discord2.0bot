@@ -14,7 +14,7 @@ class Fun(commands.Cog):
         self.not_found = "Couldn\'t find any mathces to: {query}"
         self.stackoverflow_url = 'https://api.stackexchange.com/2.2/search/advanced'
         self.realpython_url = 'https://realpython.com/search/api/v1/?'
-        self.realpython_basic_url = 'https://realpython.com/{url}'
+        self.realpython_basic_url = 'https://realpython.com{url}'
 
     @commands.command(name='stackoverflow', description='Shows top 3 resultes on stackoverflow.', aliases=['so'])
     async def stackoverflow(self, ctx: CustomContext, *, query: CharLimit(char_limit=100)):
