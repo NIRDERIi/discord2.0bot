@@ -282,7 +282,7 @@ class Fun(commands.Cog):
             if response.status != 200:
                 message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
                 raise ProcessError(message)
-        data = await response.json(content_type=None)
+            data = await response.json(content_type=None)
         info = data.get('info')
         author = info.get('author') or 'Not found.'
         home_page = info.get('home_page') or 'Not found.'
