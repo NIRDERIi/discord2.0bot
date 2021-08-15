@@ -7,6 +7,7 @@ from utility.converters import CharLimit
 from utility.buttons import Paginator
 from dateutil.parser import parse
 from utility.constants import General
+import more_itertools
 
 
 class Fun(commands.Cog):
@@ -18,6 +19,7 @@ class Fun(commands.Cog):
         self.realpython_url = 'https://realpython.com/search/api/v1/?'
         self.realpython_basic_url = 'https://realpython.com{url}'
         self.github_api = 'https://api.github.com'
+        self.lyrics_api = 'https://some-random-api.ml/lyrics?title={title}'
 
     @commands.command(name='stackoverflow', description='Shows top 3 resultes on stackoverflow.', aliases=['so'])
     async def stackoverflow(self, ctx: CustomContext, *, query: CharLimit(char_limit=100)):
@@ -111,13 +113,13 @@ class Fun(commands.Cog):
         embed.set_thumbnail(url=General.GITHUB_IMAGE())
         await ctx.send(embed=embed)
         
-    @commands.command(name='repo', description='Shows info about a specific repo.')
-    async def repo(self, ctx: CustomContext, *, query: CharLimit(char_limit=100)):
+    @commands.command(name='github-repo', description='Shows info about a specific repo.', aliases=['repo'])
+    async def github_repo(self, ctx: CustomContext, *, query: CharLimit(char_limit=100)):
         if query.count('/') != 1:
             raise ProcessError(f'Invalid input. Please make sure this is the format you use: USERNAME/REPONAME')
         async with self.bot._session.get(url=f'{self.github_api}/repos/{query}') as response:
             if response.status != 200:
-                raise ProcessError(self.bad_status(status=response.status))
+                raise ProcessError(self.bad_status.format(status=response.status))
             data = await response.json(encoding='utf-8' ,content_type=None)
             repo_id = data.get('id')
             full_name = data.get('full_name')
@@ -132,6 +134,7 @@ class Fun(commands.Cog):
             forks = data.get('forks_count')
             opened_issue = data.get('open_issues_count')
             license = data.get('license') or None
+            license = license.get('name') if license else None
             default_branch = data.get('default_branch')
             add = f'\n**Updated at:** {updated_at}\n**Pushed at:** {pushed_at}\n**Language:** {language}\n**Forks:** {forks}\n**Opened_issue:** {opened_issue}'
             description = f'**Repo id:** {repo_id}\n**Description:** {repo_description}\n**Is fork:** {is_fork}\n**Created at:** {created_at}'
@@ -142,7 +145,30 @@ class Fun(commands.Cog):
             embed.set_author(name=full_name, url=repo_url, icon_url=owner_url)
             await ctx.send(embed=embed)
 
-
+    @commands.command(name='lyrics', description='Shows lyrics for a specific song.')
+    async def lyrics(self, ctx: CustomContext, *, song_title: CharLimit(char_limit=50)):
+        song_title = song_title.replace(' ', '%20')
+        url = self.lyrics_api.format(title=song_title)
+        async with self.bot._session.get(url=url) as response:
+            if response.status != 200:
+                raise ProcessError(self.bad_status.format(status=response.status))
+            data = await response.json(content_type=None)
+            title = data.get('title')
+            author = data.get('author')
+            lyrics_list = more_itertools.sliced(data.get('lyrics'), 1000)
+            thumbnail = data.get('thumbnail').get('genius')
+            link = data.get('links').get('genius')
+            embeds = []
+            for lines in lyrics_list:
+                description = f'**Author:** {author}\n\n\n**Lyrics:** {lines}'
+                embed = discord.Embed(title='Song lyrics.', description=description, color=discord.Colour.blurple())
+                embed.set_author(name=title, url=link)
+                embed.set_thumbnail(url=thumbnail)
+                embeds.append(embed)
+            async def check(interaction: discord.Interaction):
+                return interaction.user.id == ctx.author.id
+            paginator = Paginator(ctx=ctx, embeds=embeds, timeout=20.0, check=check)
+            await paginator.run()
 
 def setup(bot: Bot):
     bot.add_cog(Fun(bot))
