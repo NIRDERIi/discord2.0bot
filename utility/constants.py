@@ -78,3 +78,7 @@ class General:
     @staticmethod
     def GITHUB_IMAGE():
         return "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
+
+    @staticmethod
+    def PYPI_IMAGE():
+        return 'https://cdn.discordapp.com/emojis/876566097111974009.png?v=1'

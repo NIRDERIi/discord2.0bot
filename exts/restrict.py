@@ -227,18 +227,6 @@ class restrict(commands.Cog):
                 embed.description += f"[stderr]\n{error.decode()}\n"
         await ctx.send(embed=embed)
 
-    @commands.command(
-        name="source",
-        aliases=["src"],
-    )
-    async def source(self, ctx: CustomContext, *, source_item: SourceConvert = None):
-        if not source_item:
-            source_item = {"Repository": General.REPO_LINK()}
-        embed = discord.Embed(description="")
-        for key, value in source_item.items():
-            embed.description += f"[{key}]({value})\n"
-        await ctx.send(embed=embed)
-
     @commands.command()
     async def bugs(self, ctx: CustomContext):
         async def check(interaction: discord.Interaction):

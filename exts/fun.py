@@ -3,16 +3,26 @@ from utility.functions import ProcessError
 import discord
 from discord.ext import commands
 from bot import Bot, CustomContext
-from utility.converters import CharLimit
+from utility.converters import CharLimit, SourceConvert
 from utility.buttons import Paginator
 from dateutil.parser import parse
 from utility.constants import General
 import more_itertools
+from utility.functions import get_divmod
 
+
+statuses = {
+    400: 'Response status code indicates that the server cannot or will not process the request',
+    401: 'The request has not been applied because it lacks valid authentication credentials for the target resource. This is from our side, feel free to report!',
+    403: 'The request is forbidden from this action from our side. Feel free to report so we can fix it!',
+    404: 'Couldn\'t find any match from these credentials.',
+    429: 'We are being rate limited.',
+    500: 'The server encountered an unexpected condition that prevented it from fulfilling the request.'}
 
 class Fun(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
+        self.statuses = statuses
         self.bad_status = "Couldn't fetch data, returned status: {status}"
         self.not_found = "Couldn't find any mathces to: {query}"
         self.stackoverflow_url = "https://api.stackexchange.com/2.2/search/advanced"
@@ -20,6 +30,19 @@ class Fun(commands.Cog):
         self.realpython_basic_url = "https://realpython.com{url}"
         self.github_api = "https://api.github.com"
         self.lyrics_api = "https://some-random-api.ml/lyrics?title={title}"
+        self.pypi_api = 'https://pypi.org/pypi/{package}/json'
+
+    @commands.command(
+        name="source",
+        aliases=["src"],
+    )
+    async def source(self, ctx: CustomContext, *, source_item: SourceConvert = None):
+        if not source_item:
+            source_item = {"Repository": General.REPO_LINK()}
+        embed = discord.Embed(description="")
+        for key, value in source_item.items():
+            embed.description += f"[{key}]({value})\n"
+        await ctx.send(embed=embed)
 
     @commands.command(
         name="stackoverflow",
@@ -38,9 +61,14 @@ class Fun(commands.Cog):
         async with self.bot._session.get(
             url=self.stackoverflow_url, params=params
         ) as response:
+            data = await response.json(content_type=None)
             if response.status != 200:
-                raise ProcessError(self.bad_status(status=response.status))
-            data = await response.json(encoding="utf-8", content_type=None)
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                if data.get('retry_after'):
+                    days, hours, minutes, seconds = get_divmod(int(message.get('retry_after')))
+                    message += f'Retry after: {days}d, {hours}h, {minutes}m and {seconds}s.'
+
+                raise ProcessError(message)
         if not data.get("items"):
             raise ProcessError(self.not_found.format(query=query))
         top3 = data["items"][:3]
@@ -83,9 +111,14 @@ class Fun(commands.Cog):
         async with self.bot._session.get(
             url=self.realpython_url, params=params
         ) as response:
+            data = await response.json(content_type=None)
             if response.status != 200:
-                raise ProcessError(self.bad_status.format(status=response.status))
-            data = await response.json(encoding="utf-8", content_type=None)
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                if data.get('retry_after'):
+                    days, hours, minutes, seconds = get_divmod(int(message.get('retry_after')))
+                    message += f'Retry after: {days}d, {hours}h, {minutes}m and {seconds}s.'
+
+                raise ProcessError(message)
             if not data.get("results"):
                 raise ProcessError(self.not_found.format(query=query))
             embeds = []
@@ -121,14 +154,18 @@ class Fun(commands.Cog):
         async with self.bot._session.get(
             url=f"{self.github_api}/users/{name}"
         ) as response:
-            if response.status != 200:
-                raise ProcessError(self.bad_status.format(status=response.status))
             data = await response.json(content_type=None)
+            if response.status != 200:
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                if data.get('retry_after'):
+                    days, hours, minutes, seconds = get_divmod(int(message.get('retry_after')))
+                    message += f'Retry after: {days}d, {hours}h, {minutes}m and {seconds}s.'
+
+                raise ProcessError(message)
         login = data.get("login")
         user_id = data.get("id")
         avatar_url = data.get("avatar_url")
         url = data.get("html_url")
-        email = data.get("email") or "None."
         bio = data.get("bio") or "None."
         repos = data.get("public_repos")
         gists = data.get("public_gists")
@@ -163,9 +200,14 @@ class Fun(commands.Cog):
         async with self.bot._session.get(
             url=f"{self.github_api}/repos/{query}"
         ) as response:
+            data = await response.json(content_type=None)
             if response.status != 200:
-                raise ProcessError(self.bad_status.format(status=response.status))
-            data = await response.json(encoding="utf-8", content_type=None)
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                if data.get('retry_after'):
+                    days, hours, minutes, seconds = get_divmod(int(message.get('retry_after')))
+                    message += f'Retry after: {days}d, {hours}h, {minutes}m and {seconds}s.'
+
+                raise ProcessError(message)
             repo_id = data.get("id")
             full_name = data.get("full_name")
             owner_url = data.get("owner").get("avatar_url")
@@ -203,9 +245,14 @@ class Fun(commands.Cog):
         song_title = song_title.replace(" ", "%20")
         url = self.lyrics_api.format(title=song_title)
         async with self.bot._session.get(url=url) as response:
-            if response.status != 200:
-                raise ProcessError(self.bad_status.format(status=response.status))
             data = await response.json(content_type=None)
+            if response.status != 200:
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                if data.get('retry_after'):
+                    days, hours, minutes, seconds = get_divmod(int(message.get('retry_after')))
+                    message += f'Retry after: {days}d, {hours}h, {minutes}m and {seconds}s.'
+
+                raise ProcessError(message)
             title = data.get("title")
             author = data.get("author")
             lyrics_list = more_itertools.sliced(data.get("lyrics"), 1000)
@@ -229,6 +276,28 @@ class Fun(commands.Cog):
             paginator = Paginator(ctx=ctx, embeds=embeds, timeout=20.0, check=check)
             await paginator.run()
 
+    @commands.command(name='pypi', description='Shows basic info about a pypi package.')
+    async def pypi(self, ctx: CustomContext, *, package: CharLimit(char_limit=50)):
+        async with self.bot._session.get(url=self.pypi_api.format(package=package)) as response:
+            if response.status != 200:
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                raise ProcessError(message)
+        data = await response.json(content_type=None)
+        info = data.get('info')
+        author = info.get('author') or 'Not found.'
+        home_page = info.get('home_page') or 'Not found.'
+        license = info.get('license') or 'Not found.'
+        name = info.get('name')
+        urls = 'Not found.'
+        if info.get('project_urls'):
+            urls = ', '.join([f'[{key}]({value})' for key, value in info.get('project_urls').items()]) or 'Not found.'
+        summary = info.get('summary') or 'Not found.'
+        version = info.get('version') or 'Not found.'
+        description = f'**Summary:** {summary}\n**Version:** {version}\n**Home page:** {home_page}\n**License:** {license}\n**Name:** {name}\n**URLs:** {urls}'
+        embed = discord.Embed(title='PyPi package.', description=description, color=discord.Colour.blurple())
+        embed.set_author(name=author, icon_url=General.PYPI_IMAGE())
+        embed.set_thumbnail(url=General.PYPI_IMAGE())
+        await ctx.send(embed=embed)
 
 def setup(bot: Bot):
     bot.add_cog(Fun(bot))
