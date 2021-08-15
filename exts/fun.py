@@ -299,5 +299,16 @@ class Fun(commands.Cog):
         embed.set_thumbnail(url=General.PYPI_IMAGE())
         await ctx.send(embed=embed)
 
+    @commands.command(name='joke', description='Shows a random joke.')
+    async def joke(self, ctx: CustomContext):
+        async with self.bot._session.get('https://some-random-api.ml/joke') as response:
+            if response.status != 200:
+                message = self.statuses.get(response.status) or self.bad_status.format(status=response.status)
+                raise ProcessError(message)
+            data = await response.json(content_type=None)
+        joke = data.get('joke')
+        embed = discord.Embed(title='Joke!', description=f'`{joke}`', color=discord.Colour.blurple())
+        await ctx.send(embed=embed)
+
 def setup(bot: Bot):
     bot.add_cog(Fun(bot))
