@@ -119,7 +119,28 @@ class Fun(commands.Cog):
             if response.status != 200:
                 raise ProcessError(self.bad_status(status=response.status))
             data = await response.json(encoding='utf-8' ,content_type=None)
-            
+            repo_id = data.get('id')
+            full_name = data.get('full_name')
+            owner_url = data.get('owner').get('avatar_url')
+            repo_url = data.get('html_url')
+            repo_description = data.get('description')
+            is_fork = data.get('fork')
+            created_at = discord.utils.format_dt(parse(data.get('created_at')), style='F')
+            updated_at = discord.utils.format_dt(parse(data.get('updated_at')), style='F')
+            pushed_at = discord.utils.format_dt(parse(data.get('pushed_at')), style='F')
+            language = data.get('language')
+            forks = data.get('forks_count')
+            opened_issue = data.get('open_issues_count')
+            license = data.get('license') or None
+            default_branch = data.get('default_branch')
+            add = f'\n**Updated at:** {updated_at}\n**Pushed at:** {pushed_at}\n**Language:** {language}\n**Forks:** {forks}\n**Opened_issue:** {opened_issue}'
+            description = f'**Repo id:** {repo_id}\n**Description:** {repo_description}\n**Is fork:** {is_fork}\n**Created at:** {created_at}'
+            add2 = f'\n**License:** {license}\n**Default branch:** {default_branch}'
+            description += add
+            description += add2
+            embed = discord.Embed(title='Repository info.', description=description, color=discord.Colour.blurple())
+            embed.set_author(name=full_name, url=repo_url, icon_url=owner_url)
+            await ctx.send(embed=embed)
 
 
 
