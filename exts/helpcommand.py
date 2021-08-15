@@ -16,24 +16,18 @@ class HelpCommand(commands.Cog):
     ):
 
         if command_name:
-            (
-                aliases,
-                cog_name,
-                description,
-                qualified_name,
-                signature
-             ) = command_name
-            aliases = ', '.join([f'`{alias}`' for alias in aliases])
-            aliases = aliases or 'No aliases.'
+            (aliases, cog_name, description, qualified_name, signature) = command_name
+            aliases = ", ".join([f"`{alias}`" for alias in aliases])
+            aliases = aliases or "No aliases."
             embed = discord.Embed(
-                description=f'''**Description: ** `{description or "None"}`
+                description=f"""**Description: ** `{description or "None"}`
 
                 **Category-extension:** `{cog_name}`
 
                 **Usage: ** `{qualified_name} {signature}`
 
 
-                **Aliases: ** {aliases}'''
+                **Aliases: ** {aliases}"""
             )
             await ctx.send(embed=embed)
             return
@@ -42,10 +36,7 @@ class HelpCommand(commands.Cog):
             color=discord.Colour.blurple(),
         )
         try:
-            await ctx.send(embed=embed, view=HelpCommandView(
-                timeout=20.0,
-                ctx=ctx
-            ))
+            await ctx.send(embed=embed, view=HelpCommandView(timeout=20.0, ctx=ctx))
         except discord.NotFound as e:
             print("errorr")
             print(e)

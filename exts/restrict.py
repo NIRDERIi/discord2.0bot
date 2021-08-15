@@ -27,9 +27,7 @@ import inspect
 import more_itertools
 from utility.logger import Log
 
-log = Log('logs.log').get_logger(__name__)
-
-
+log = Log("logs.log").get_logger(__name__)
 
 
 class restrict(commands.Cog):
@@ -40,10 +38,8 @@ class restrict(commands.Cog):
         self.bot: Bot = bot
         self.eval_outputs: dict = {}
 
-
     async def cog_check(self, ctx: CustomContext):
         return ctx.author.id in self.bot.allowed_users
-
 
     @commands.command(name="libs-reload")
     async def libs_reload(self, ctx: CustomContext, *, lib_path: SelfLib()):
@@ -79,11 +75,11 @@ class restrict(commands.Cog):
                 "datetime": datetime,
                 "importlib": importlib,
                 "__file__": __file__,
-                'inspect': inspect,
-                'pathlib': pathlib,
-                'ProcessError': ProcessError,
-                'constants': constants,
-                'conn': conn
+                "inspect": inspect,
+                "pathlib": pathlib,
+                "ProcessError": ProcessError,
+                "constants": constants,
+                "conn": conn,
             }
             stdout = io.StringIO()
             to_process = f"async def func():\n{textwrap.indent(code, '    ')}"
@@ -121,7 +117,6 @@ class restrict(commands.Cog):
                 message_eval = await ctx.reply(embed=embed)
                 self.eval_outputs[ctx.message.id] = message_eval
             pass
-
 
     @commands.command()
     async def reload(self, ctx: CustomContext, *, extension: ExtensionPath):
@@ -236,88 +231,115 @@ class restrict(commands.Cog):
         name="source",
         aliases=["src"],
     )
-    async def source(self, ctx: CustomContext, *, source_item: SourceConvert=None):
+    async def source(self, ctx: CustomContext, *, source_item: SourceConvert = None):
         if not source_item:
-            source_item = {'Repository': General.REPO_LINK()}
-        embed = discord.Embed(description='')
+            source_item = {"Repository": General.REPO_LINK()}
+        embed = discord.Embed(description="")
         for key, value in source_item.items():
-            embed.description += f'[{key}]({value})\n'
+            embed.description += f"[{key}]({value})\n"
         await ctx.send(embed=embed)
-
 
     @commands.command()
     async def bugs(self, ctx: CustomContext):
         async def check(interaction: discord.Interaction):
             return interaction.user.id == ctx.author.id
-        paginator = Paginator(ctx=ctx, embeds=[], timeout=Time.BASIC_TIMEOUT(), check=check)
+
+        paginator = Paginator(
+            ctx=ctx, embeds=[], timeout=Time.BASIC_TIMEOUT(), check=check
+        )
         async with self.bot.pool.acquire(timeout=Time.BASIC_DBS_TIMEOUT()) as conn:
 
-            data = await conn.fetch('''SELECT * FROM bugs''')
+            data = await conn.fetch("""SELECT * FROM bugs""")
         if not data:
-            return await ctx.send(embed=build_embed(title='No bugs.', description='There are no system bugs.'))
+            return await ctx.send(
+                embed=build_embed(
+                    title="No bugs.", description="There are no system bugs."
+                )
+            )
         iterable = more_itertools.sliced(seq=data, n=4)
         lst = [i for i in iterable]
         for outer_lst in lst:
-            embed = discord.Embed(title='System bugs.', color=discord.Colour.blurple())
+            embed = discord.Embed(title="System bugs.", color=discord.Colour.blurple())
             for record in outer_lst:
-                bug_id = record.get('bug_id') or 'None'
-                short_error = record.get('short_error') or 'None fetched properly.'
-                embed.add_field(name=f'ID {bug_id}', value=short_error, inline=False)
+                bug_id = record.get("bug_id") or "None"
+                short_error = record.get("short_error") or "None fetched properly."
+                embed.add_field(name=f"ID {bug_id}", value=short_error, inline=False)
             paginator.add_embed(embed=embed)
         await paginator.run()
 
     @commands.command()
     async def bug(self, ctx: CustomContext, bug_id: BugInfo):
         bugid, guild_name, user_name, short_error, full_traceback, time_string = bug_id
-        embed = discord.Embed(title=f'Bug info.', color=discord.Colour.blurple())
-        embed.add_field(name='Bug ID', value=f'`{bugid}`', inline=False)
-        embed.add_field(name='Guild name.', value=f'{guild_name}', inline=False)
-        embed.add_field(name='User name.', value=f'{user_name}', inline=False)
-        embed.add_field(name='Short error.', value=short_error, inline=False)
-        embed.add_field(name='Errored.', value=f'`{time_string} ago.`')
+        embed = discord.Embed(title=f"Bug info.", color=discord.Colour.blurple())
+        embed.add_field(name="Bug ID", value=f"`{bugid}`", inline=False)
+        embed.add_field(name="Guild name.", value=f"{guild_name}", inline=False)
+        embed.add_field(name="User name.", value=f"{user_name}", inline=False)
+        embed.add_field(name="Short error.", value=short_error, inline=False)
+        embed.add_field(name="Errored.", value=f"`{time_string} ago.`")
         try:
             link = await error_pastebin(self.bot, full_traceback)
-            embed.add_field(name='Traceback.', value=f'[Traceback]({link})', inline=False)
+            embed.add_field(
+                name="Traceback.", value=f"[Traceback]({link})", inline=False
+            )
             await ctx.send(embed=embed)
         except Exception as e:
+
             async def check(interaction: discord.Interaction):
                 return interaction.user.id in self.bot.allowed_users
+
             print(e)
-            view, message = await ctx.send_confirm(embed=embed, content='Would you like to get the traceback?', check=check)
+            view, message = await ctx.send_confirm(
+                embed=embed, content="Would you like to get the traceback?", check=check
+            )
             if not view.value:
                 return
-            file = open('error.txt', 'w')
+            file = open("error.txt", "w")
             file.write(full_traceback)
             file.close()
-            await ctx.send(file=discord.File('error.txt'))
-            os.remove('error.txt')
-
-
-
+            await ctx.send(file=discord.File("error.txt"))
+            os.remove("error.txt")
 
     @commands.command()
     async def fix(self, ctx: CustomContext, bug_id: int):
         async def check(interaction: discord.Interaction):
             return ctx.author.id in self.bot.allowed_users
+
         async with self.bot.pool.acquire() as conn:
-            data = await conn.fetch('''SELECT * FROM bugs WHERE bug_id = ($1)''', bug_id)
+            data = await conn.fetch(
+                """SELECT * FROM bugs WHERE bug_id = ($1)""", bug_id
+            )
             if not data:
-                raise ProcessError(f'Bug with the id of {bug_id} was not found.')
-            
-            embed = discord.Embed(title='Confirm.', description=f'Are you sure you want to fix bug {bug_id}', color=discord.Colour.blurple())
+                raise ProcessError(f"Bug with the id of {bug_id} was not found.")
+
+            embed = discord.Embed(
+                title="Confirm.",
+                description=f"Are you sure you want to fix bug {bug_id}",
+                color=discord.Colour.blurple(),
+            )
             view, message = await ctx.send_confirm(embed=embed, check=check)
             if not view.value:
-                return await ctx.send(embed=build_embed(title='Process aborted.'))
-            await conn.execute('''DELETE FROM bugs WHERE bug_id = ($1)''', bug_id)
-        await ctx.send(embed=build_embed(title='Bug deleted.', description=f'Bug with the id of {bug_id} was deleted.'))
-        user = ctx.guild.get_member(data[0]['user_id']) or self.bot.get_user(data[0]['user_id']) or None
+                return await ctx.send(embed=build_embed(title="Process aborted."))
+            await conn.execute("""DELETE FROM bugs WHERE bug_id = ($1)""", bug_id)
+        await ctx.send(
+            embed=build_embed(
+                title="Bug deleted.",
+                description=f"Bug with the id of {bug_id} was deleted.",
+            )
+        )
+        user = (
+            ctx.guild.get_member(data[0]["user_id"])
+            or self.bot.get_user(data[0]["user_id"])
+            or None
+        )
         if not user:
             return
         with contextlib.suppress(discord.HTTPException, discord.Forbidden):
-            await user.send(embed=build_embed(title='Bug solved.', description=f'The bug you reported with the id of {bug_id} was solved!\nThank you for helping us make the bot better!'))
-
-
-
+            await user.send(
+                embed=build_embed(
+                    title="Bug solved.",
+                    description=f"The bug you reported with the id of {bug_id} was solved!\nThank you for helping us make the bot better!",
+                )
+            )
 
 
 def setup(bot: Bot):

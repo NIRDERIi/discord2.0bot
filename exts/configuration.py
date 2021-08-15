@@ -47,7 +47,7 @@ class configuration(commands.Cog):
     @commands.has_guild_permissions(administrator=True)
     async def set_muted(self, ctx: CustomContext, *, role: discord.Role):
         if ctx.guild.me.top_role <= role:
-            raise ProcessError('You can\'t set muted role higher than my top role.')
+            raise ProcessError("You can't set muted role higher than my top role.")
         check = functools.partial(basic_guild_check, ctx)
         await self.create_guild_row(ctx)
         embed = build_embed(

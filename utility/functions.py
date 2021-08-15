@@ -9,8 +9,8 @@ import os
 import difflib
 from bot import CustomContext, Bot
 
-BIN_LINK = 'https://hastebin.com/documents'
-BIN_LINK_FORMAT = 'https://hastebin.com/{}'
+BIN_LINK = "https://hastebin.com/documents"
+BIN_LINK_FORMAT = "https://hastebin.com/{}"
 
 
 class ProcessError(commands.CommandError):
@@ -19,6 +19,7 @@ class ProcessError(commands.CommandError):
 
 class BadStatus(commands.CommandError):
     pass
+
 
 async def start_cog_help(ctx, cog_name: str):
     async def check(interaction):
@@ -95,21 +96,25 @@ def find_path(file: str):
     return final_path
 
 
-
 def get_divmod(seconds: int):
     days, hours = divmod(seconds, 86400)
     hours, minutes = divmod(hours, 3600)
     minutes, seconds = divmod(minutes, 60)
-    days, hours, minutes, seconds = round(days), round(hours), round(minutes), round(seconds)
+    days, hours, minutes, seconds = (
+        round(days),
+        round(hours),
+        round(minutes),
+        round(seconds),
+    )
     return days, hours, minutes, seconds
 
 
 async def error_pastebin(bot: Bot, text: str):
 
-    data = bytes(str(text), encoding='utf-8')
+    data = bytes(str(text), encoding="utf-8")
     async with bot._session.post(url=BIN_LINK, data=data) as raw_response:
         if raw_response.status != 200:
-            raise BadStatus(f'Status: {raw_response.status}')
-        response = await raw_response.json(content_type=None, encoding='utf-8')
-        key = response['key']
+            raise BadStatus(f"Status: {raw_response.status}")
+        response = await raw_response.json(content_type=None, encoding="utf-8")
+        key = response["key"]
         return BIN_LINK_FORMAT.format(key)

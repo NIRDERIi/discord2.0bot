@@ -49,13 +49,19 @@ def mod_check(action):
             elif isinstance(member, discord.User):
                 return await func(*args, **kwargs)
             elif ctx.author.top_role < member.top_role:
-                raise ProcessError('You must be in higher role than member to perform this action.')
+                raise ProcessError(
+                    "You must be in higher role than member to perform this action."
+                )
             elif member.guild_permissions.administrator:
-                raise ProcessError(f'I can\'t {action} an admin.')
+                raise ProcessError(f"I can't {action} an admin.")
             elif member.top_role >= ctx.guild.me.top_role:
-                raise ProcessError(f'I can\'t {action} a member with higher/equal role as me.')
+                raise ProcessError(
+                    f"I can't {action} a member with higher/equal role as me."
+                )
             elif member.id == ctx.author.id:
-                raise ProcessError(f'You can\'t {action} yourself.')
+                raise ProcessError(f"You can't {action} yourself.")
             return await func(*args, **kwargs)
+
         return checker
+
     return wrapper

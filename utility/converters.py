@@ -1,6 +1,13 @@
 import datetime
 from discord import guild
-from utility.functions import ProcessError, build_embed, find_path, error_pastebin, get_divmod, BadStatus
+from utility.functions import (
+    ProcessError,
+    build_embed,
+    find_path,
+    error_pastebin,
+    get_divmod,
+    BadStatus,
+)
 import discord
 from discord.ext import commands
 from . import constants
@@ -11,6 +18,7 @@ import inspect
 import pathlib
 import importlib
 from . import constants
+
 
 class CodeCleanUp(commands.Converter):
     async def convert(self, ctx: CustomContext, arg: str) -> str:
@@ -86,7 +94,7 @@ class CharLimit(commands.Converter):
 
 
 class SourceConvert(commands.Converter):
-    async def convert(self, ctx: CustomContext, argument: str=None):
+    async def convert(self, ctx: CustomContext, argument: str = None):
         options = {}
         if ctx.bot.get_command(argument):
             source_item: commands.Command = ctx.bot.get_command(argument)
@@ -116,9 +124,9 @@ class SourceConvert(commands.Converter):
         else:
             modules = []
             all_classes = []
-            for module in pathlib.Path().glob('**/*.py'):
+            for module in pathlib.Path().glob("**/*.py"):
                 if module.name != pathlib.Path(__file__).name:
-                    modules.append(importlib.import_module('.'.join(module.parts)[:-3]))
+                    modules.append(importlib.import_module(".".join(module.parts)[:-3]))
             for module in modules:
                 for name, _class in inspect.getmembers(module, inspect.isclass):
                     if name == argument:
@@ -127,79 +135,84 @@ class SourceConvert(commands.Converter):
                     if name == argument:
                         all_classes.append(_functions)
             if not all_classes:
-                raise ProcessError(f"Could not convert `{argument.replace('`', '')}` to a valid cog, function, class or command.")
+                raise ProcessError(
+                    f"Could not convert `{argument.replace('`', '')}` to a valid cog, function, class or command."
+                )
             all_classes = list(set(all_classes))
             for _class in all_classes:
                 file_path = inspect.getsourcefile(_class)
-                file_path = file_path.replace('\\', '/')
+                file_path = file_path.replace("\\", "/")
                 file_path_lst = file_path.split("/")
                 if file_path_lst[-1] in os.listdir():
                     source_path = file_path_lst[-1]
-                elif file_path_lst[-1] in os.listdir('exts'):
-                    source_path = f'exts/{file_path_lst[-1]}'
+                elif file_path_lst[-1] in os.listdir("exts"):
+                    source_path = f"exts/{file_path_lst[-1]}"
                 elif file_path_lst[-1] in os.listdir("utility"):
-                    source_path = f'utility/{file_path_lst[-1]}'
+                    source_path = f"utility/{file_path_lst[-1]}"
                 else:
-                    raise ProcessError('Unkown error while fetching the correct place.')
+                    raise ProcessError("Unkown error while fetching the correct place.")
                 lines = inspect.getsourcelines(_class)
                 starting_line = lines[1]
                 ending_line = len(lines[0]) + starting_line - 1
-                full_link = f'{constants.General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}'
+                full_link = f"{constants.General.REPO_LINK()}/blob/master/{source_path}#L{starting_line}-L{ending_line}"
                 options[argument] = full_link
 
         if not options:
-            raise ProcessError('Unkown error while fetching the correct place.')
+            raise ProcessError("Unkown error while fetching the correct place.")
         else:
             return options
 
 
-
 class BugInfo(commands.Converter):
-    
     async def convert(self, ctx: CustomContext, argument: str) -> typing.List[str]:
         bot: Bot = ctx.bot
         if not argument.isdigit():
-            raise ProcessError('Bug id must be an integer.')
+            raise ProcessError("Bug id must be an integer.")
         argument = int(argument)
         async with bot.pool.acquire(timeout=constants.Time.BASIC_DBS_TIMEOUT()) as conn:
-            data = await conn.fetch('''SELECT * FROM bugs WHERE bug_id = ($1)''', argument)
+            data = await conn.fetch(
+                """SELECT * FROM bugs WHERE bug_id = ($1)""", argument
+            )
         if not data:
-            raise ProcessError(f'Bug with the id of {argument} was not found.')
+            raise ProcessError(f"Bug with the id of {argument} was not found.")
         record = data[0]
         bug_id = argument
-        guild_name = bot.get_guild(record['guild_id']) or 'Couldn\'t fetch.'
-        user_name = bot.get_user(record['user_id']) or 'Couldn\'t fetch.'
-        short_error = record['short_error'] or 'Couldn\'t fetch.'
-        full_traceback = record['full_traceback']
+        guild_name = bot.get_guild(record["guild_id"]) or "Couldn't fetch."
+        user_name = bot.get_user(record["user_id"]) or "Couldn't fetch."
+        short_error = record["short_error"] or "Couldn't fetch."
+        full_traceback = record["full_traceback"]
 
-        days, hours, minutes, seconds = get_divmod((datetime.datetime.utcnow() - record['error_time']).total_seconds())
-        time_string = f'{days}d, {hours}h, {minutes}m, {seconds}s'
+        days, hours, minutes, seconds = get_divmod(
+            (datetime.datetime.utcnow() - record["error_time"]).total_seconds()
+        )
+        time_string = f"{days}d, {hours}h, {minutes}m, {seconds}s"
         return bug_id, guild_name, user_name, short_error, full_traceback, time_string
 
 
-
-'''
+"""
         formatted_text = '-\n'.join([i for i in [i for i in more_itertools.sliced(text, 158)]])
         data = bytes(formatted_text, 'utf-8')
         async with self.bot._session.post(self.bin_link, data=data) as raw_response:
             response = await raw_response.json()
             key = response['key']
             return self.bin_link_format.format(key)
-'''
+"""
+
 
 class TimeConvert(commands.Converter):
-
     async def convert(self, ctx: CustomContext, argument: str):
         if argument.isdigit() or argument.isnumeric():
-            raise ProcessError('Time input must not be an integer.')
-        dct = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+            raise ProcessError("Time input must not be an integer.")
+        dct = {"s": 1, "m": 60, "h": 3600, "d": 86400}
         time_mark = argument[-1].lower()
         if time_mark not in dct:
-            raise ProcessError(f'Time duration must not be {time_mark}.\nIt has to be either of these choices: `s`, `m`, `h`, `d`')
+            raise ProcessError(
+                f"Time duration must not be {time_mark}.\nIt has to be either of these choices: `s`, `m`, `h`, `d`"
+            )
         seconds_input = argument[:-1]
         if not seconds_input.isdigit():
-            raise ProcessError(f'Invalid number was input: {seconds_input}')
+            raise ProcessError(f"Invalid number was input: {seconds_input}")
         seconds = int(seconds_input * dct.get(time_mark))
         if seconds > 15724800:
-            raise ProcessError('Time must not be longer than 6 months.')
+            raise ProcessError("Time must not be longer than 6 months.")
         return seconds

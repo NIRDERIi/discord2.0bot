@@ -6,6 +6,7 @@ from bot import CustomContext
 from . import constants
 from . import functions
 
+
 class ConfirmButtonBuild(discord.ui.View):
     def __init__(
         self,
@@ -74,6 +75,7 @@ class Paginator:
         )
         await self.ctx.send(embed=self.embeds[0], view=view)
         await view.wait()
+
     def add_embed(self, embed: discord.Embed):
         self.embeds.append(embed)
 

@@ -13,7 +13,7 @@ from utility.logger import Log
 
 
 BASIC_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
-log = Log('logs.log').get_logger(__name__)
+log = Log("logs.log").get_logger(__name__)
 
 
 class LoggerHandler:
@@ -79,7 +79,7 @@ class Bot(commands.Bot):
             "HelpCommand",
             "Logs",
             "restrict",
-            'ErrorHandler'
+            "ErrorHandler",
         ]
         self.start_logger(
             name="discord",
@@ -98,48 +98,54 @@ class Bot(commands.Bot):
         format=BASIC_FORMAT,
     ):
         logger = LoggerHandler(
-            name=name,
-            filename=filename,
-            encoding=encoding,
-            mode=mode,
-            format=format
+            name=name, filename=filename, encoding=encoding, mode=mode, format=format
         )
         logger._start_handler()
 
-
     async def cache_db(self):
-        log.info(f'Started force cache database.')
+        log.info(f"Started force cache database.")
         async with self.pool.acquire(timeout=100) as conn:
-            guilds_data = await conn.fetch('''SELECT guild_id, prefix FROM guilds_config''')
+            guilds_data = await conn.fetch(
+                """SELECT guild_id, prefix FROM guilds_config"""
+            )
             if not guilds_data:
                 pass
             else:
                 for guild_record in guilds_data:
-                    if not guild_record['prefix']:
-                        self.prefixes[guild_record['guild_id']] = 'm!'
+                    if not guild_record["prefix"]:
+                        self.prefixes[guild_record["guild_id"]] = "m!"
                     else:
-                        self.prefixes[guild_record['guild_id']] = guild_record['prefix']
-            
-            webhooks_data = await conn.fetch('''SELECT guild_id, logs_channel, webhook_url FROM guilds_config''')
+                        self.prefixes[guild_record["guild_id"]] = guild_record["prefix"]
+
+            webhooks_data = await conn.fetch(
+                """SELECT guild_id, logs_channel, webhook_url FROM guilds_config"""
+            )
             if not webhooks_data:
                 pass
             else:
                 for guild_record in webhooks_data:
-                    if not guild_record['webhook_url']:
+                    if not guild_record["webhook_url"]:
                         continue
-                    self.logs_webhooks[guild_record['guild_id']] = guild_record['webhook_url']
+                    self.logs_webhooks[guild_record["guild_id"]] = guild_record[
+                        "webhook_url"
+                    ]
 
-            mutes_data = await conn.fetch('''SELECT guild_id, muted_role FROM guilds_config''')
+            mutes_data = await conn.fetch(
+                """SELECT guild_id, muted_role FROM guilds_config"""
+            )
             if not mutes_data:
                 pass
             else:
                 for guild_record in mutes_data:
-                    if not guild_record['muted_role']:
+                    if not guild_record["muted_role"]:
                         continue
                     else:
-                        self.mute_roles[guild_record['guild_id']] = guild_record['muted_role']
+                        self.mute_roles[guild_record["guild_id"]] = guild_record[
+                            "muted_role"
+                        ]
 
-            log.info('Ended force cache from database.')
+            log.info("Ended force cache from database.")
+
     async def get_context(self, message, *, cls=CustomContext):
         return await super().get_context(message, cls=cls)
 
@@ -150,14 +156,13 @@ class Bot(commands.Bot):
     def reload_extension(self, name, *, package=None):
         try:
             super().reload_extension(name, package=package)
-            log.cog(f'Cog reloaded: {name} - package: {package}')
+            log.cog(f"Cog reloaded: {name} - package: {package}")
         except ImportError:
             for file in os.listdir("utility"):
                 valid_file = f"utility.{file[:-3]}"
                 importlib.reload(eval(valid_file))
                 super().reload_extension(name, package=package)
-                log.cog(f'Cog reloaded: {name} - package: {package}')
-                
+                log.cog(f"Cog reloaded: {name} - package: {package}")
 
     def get_extensions_files(self, path: str, invalid_files: list = []):
 
@@ -173,18 +178,15 @@ class Bot(commands.Bot):
 
     def load_extension(self, name, *, package=None):
         super().load_extension(name, package=package)
-        log.cog(f'Extension loaded: {name} - package: {package}')
-    
+        log.cog(f"Extension loaded: {name} - package: {package}")
+
     def unload_extension(self, name, *, package=None):
         super().unload_extension(name, package=package)
-        log.cog(f'Unloaded extension: {name} - package: {package}')
+        log.cog(f"Unloaded extension: {name} - package: {package}")
 
     def load_extensions(self):
 
-        path, files = self.get_extensions_files(
-            "exts",
-            invalid_files=self.invalid_exts
-        )
+        path, files = self.get_extensions_files("exts", invalid_files=self.invalid_exts)
         for file in files:
             self.load_extension(f"{path}.{file}")
             print(f"Loaded {path}.{file}")
@@ -211,14 +213,13 @@ class Bot(commands.Bot):
         if self._session:
             await self._session.close()
         await super().close()
-    
+
     async def login(self, *args, **kwargs):
         if self.force_db_cache:
-            log.info('Forcing database cache enabled.')
+            log.info("Forcing database cache enabled.")
             await self.cache_db()
         self._session = aiohttp.ClientSession()
         await super().login(*args, **kwargs)
-
 
 
 async def get_prefix(bot: Bot, message: discord.Message):
@@ -235,6 +236,4 @@ async def get_prefix(bot: Bot, message: discord.Message):
         else:
             prefix = data[0]["prefix"]
             bot.prefixes[message.guild.id] = prefix
-    return commands.when_mentioned_or(
-        bot.prefixes.get(message.guild.id)
-    )(bot, message)
+    return commands.when_mentioned_or(bot.prefixes.get(message.guild.id))(bot, message)

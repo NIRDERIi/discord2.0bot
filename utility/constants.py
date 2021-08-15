@@ -77,4 +77,4 @@ class General:
 
     @staticmethod
     def GITHUB_IMAGE():
-        return 'https://avatars.githubusercontent.com/u/9919?s=200&v=4'
+        return "https://avatars.githubusercontent.com/u/9919?s=200&v=4"

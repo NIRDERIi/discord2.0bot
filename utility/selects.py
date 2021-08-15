@@ -14,14 +14,14 @@ class HelpCommandView(discord.ui.View):
         super().__init__(timeout=timeout)
         item = HelpCommandSelect(ctx=self.ctx, view=self)
         for cog_name, cog_object in self.bot.cogs.items():
-            if (
-                cog_name in self.bot.hidden_help_cogs
-            ):
+            if cog_name in self.bot.hidden_help_cogs:
                 continue
             item.add_option(label=cog_name, description=cog_object.__doc__)
         self.add_item(item=item)
+
         async def check(interaction: discord.Interaction):
             return interaction.user.id == ctx.author.id
+
         self.interaction_check = check
 
     async def on_timeout(self) -> None:
@@ -30,7 +30,6 @@ class HelpCommandView(discord.ui.View):
         except Exception as e:
             pass
         return await super().on_timeout()
-    
 
 
 class HelpCommandSelect(discord.ui.Select):
