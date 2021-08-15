@@ -86,6 +86,8 @@ class ErrorHandler(commands.Cog):
             or type(error).__name__ == "ProcessError"
         ):
             embed.description = str(error.args[0])
+        elif isinstance(error, commands.CheckFailure):
+            embed.description = 'You have no perms to use this command.'
         elif isinstance(new_error, discord.NotFound):
             embed.description = f"{new_error.text}"
         elif isinstance(new_error, discord.Forbidden):
